@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useFormationData } from '../hooks/useFormationData';
 import { getPositionLabel, FormationPlayer } from '../hooks/useFormationData';
 import { Player } from '../types';
@@ -41,6 +41,23 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     (total, positionPlayers) => total + positionPlayers.length, 
     0
   );
+
+  // Function to get the accurate count for a position
+  const getPositionPlayerCount = (position: string, playersForPosition: Player[]): number => {
+    if (!playersForPosition) return 0;
+    
+    console.log(`Count for ${position}: ${playersForPosition.length} players`);
+    return playersForPosition.length;
+  };
+
+  // Log the position player map to debug position counts
+  useEffect(() => {
+    console.log('Position player map in component:', 
+      Object.keys(positionPlayersMap).map(key => 
+        `${key}: ${positionPlayersMap[key]?.length || 0} players`
+      )
+    );
+  }, [positionPlayersMap]);
 
   const colorScheme = useMemo((): ColorScheme => {
     switch (teamColor) {
@@ -111,6 +128,17 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     return colorScheme.textSecondary;
   };
 
+  // Function to get more specific position display names
+  const getDetailedPositionLabel = (position: string): string => {
+    switch (position) {
+      case 'LCB': return 'LCB';
+      case 'RCB': return 'RCB';
+      case 'LCDM': return 'LCDM';
+      case 'RCDM': return 'RCDM';
+      default: return getPositionLabel(position);
+    }
+  };
+
   return (
     <div className="relative w-full h-[1210px] border border-gray-600 rounded-lg overflow-hidden">
       {/* Player count and toggle button container */}
@@ -125,7 +153,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
           onClick={() => setShowPlayerCount(prev => !prev)}
           className={`px-3 py-1 text-sm rounded-md ${colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
         >
-          {showPlayerCount ? "Show Positions" : "Show Player Count"}
+          {showPlayerCount ? "Show Detailed Positions" : "Show Player Count"}
         </button>
       </div>
       
@@ -134,43 +162,48 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         style={{ backgroundImage: 'url(/pitch-bg.svg)' }}
       />
       
+      {/* Use a single loop to render both position circles and player names in the correct position */}
       {formationPlayers.map((item, index) => {
         const { player, position, coordinates } = item;
-        const positionLabel = getPositionLabel(position);
+        const positionLabel = showPlayerCount ? getPositionLabel(position) : getDetailedPositionLabel(position);
         const mainPlayer = player;
         
         // Get all players for this position
         const playersForPosition = positionPlayersMap[position] || [];
+        const playerCount = getPositionPlayerCount(position, playersForPosition);
         const backupPlayers = mainPlayer 
           ? playersForPosition.filter(p => p.id !== mainPlayer.id).slice(0, 2) 
           : playersForPosition.slice(0, 2);
             
         const animationDelay = `${index * 0.1}s`;
         
-        // Calculate player count for this position
-        const playerCount = playersForPosition.length;
-        
         return (
-          <div
-            key={`${position}-${index}`}
-            className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center animate-fadeIn"
+          <div 
+            key={`position-${position}-${index}`}
+            className="absolute z-10 animate-fadeIn"
             style={{
               top: coordinates.top,
               left: coordinates.left,
+              transform: 'translate(-50%, -50%)',
               animationDelay: animationDelay,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
             }}
           >
             {/* Position circle */}
             <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center mb-1 ${colorScheme.bgPrimary} shadow-lg`}
+              className={`w-11 h-11 rounded-full flex items-center justify-center ${colorScheme.bgPrimary} shadow-lg`}
             >
               <span className={`text-sm font-bold ${colorScheme.text}`}>
                 {showPlayerCount ? playerCount : positionLabel}
               </span>
             </div>
             
-            {/* Player name & tag */}
-            <div className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg`}>
+            {/* Player name & tag - with margin to position below the circle */}
+            <div 
+              className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg mt-2`}
+            >
               {mainPlayer ? (
                 <>
                   <div className={`text-md font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)}`}>
@@ -221,4 +254,4 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   );
 };
 
-export default FormationDisplay; 
+export default FormationDisplay;

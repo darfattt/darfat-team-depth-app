@@ -51,12 +51,14 @@ const formation4231: FormationPositions = {
   CAM: { top: '35%', left: '50%' },
   RM: { top: '40%', left: '80%' },
   
-  // Defensive Midfielders
-  CDM: [{ top: '60%', left: '35%' }, { top: '60%', left: '65%' }],
+  // Defensive Midfielders (split into LCDM and RCDM)
+  LCDM: { top: '60%', left: '35%' },
+  RCDM: { top: '60%', left: '65%' },
   
-  // Defenders (back line)
+  // Defenders (back line) (split CB into LCB and RCB)
   LB: { top: '80%', left: '15%' },
-  CB: [{ top: '80%', left: '35%' }, { top: '80%', left: '65%' }],
+  LCB: { top: '80%', left: '35%' },
+  RCB: { top: '80%', left: '65%' },
   RB: { top: '80%', left: '85%' },
   
   // Goalkeeper at the bottom (defensive end)
@@ -65,7 +67,16 @@ const formation4231: FormationPositions = {
 
 // Function to find players for a specific position
 const getPlayersForPosition = (players: Player[], position: string): Player[] => {
-  const validPositions = positionMapping[position as keyof typeof positionMapping] || [position];
+  let validPositions: string[] = [];
+  
+  // Special handling for split positions
+  if (position === 'LCB' || position === 'RCB') {
+    validPositions = positionMapping['CB'] || ['CB'];
+  } else if (position === 'LCDM' || position === 'RCDM') {
+    validPositions = positionMapping['CDM'] || ['CDM'];
+  } else {
+    validPositions = positionMapping[position as keyof typeof positionMapping] || [position];
+  }
   
   return players
     .filter(p => {
@@ -74,12 +85,16 @@ const getPlayersForPosition = (players: Player[], position: string): Player[] =>
         return true;
       }
       
-      // Special cases for flexible positions
-      if (position === 'CDM' && (p.position.includes('CM') || p.position.includes('DM'))) {
+      // Special cases for flexible positions - more strict to avoid overlaps
+      if ((position === 'LCDM' || position === 'RCDM') && 
+         (p.position.includes('CM') || p.position.includes('DM')) && 
+         !p.position.includes('CAM') && // Exclude CAM players from CDM
+         !p.position.includes('AM')) {  // Exclude AM players from CDM
         return true;
       }
       
-      if (position === 'CAM' && (p.position.includes('CM') || p.position.includes('AM'))) {
+      if (position === 'CAM' && 
+         (p.position.includes('CAM') || p.position.includes('AM'))) {
         return true;
       }
       
@@ -114,9 +129,11 @@ export const getPositionLabel = (position: string): string => {
   switch (position) {
     case 'GK': return 'GK';
     case 'LB': return 'LB';
-    case 'CB': return 'CB';
+    case 'LCB': return 'CB';
+    case 'RCB': return 'CB';
     case 'RB': return 'RB';
-    case 'CDM': return 'CM';
+    case 'LCDM': return 'CDM';
+    case 'RCDM': return 'CDM';
     case 'LM': return 'LM';
     case 'CAM': return 'AM';
     case 'RM': return 'RM';
@@ -127,11 +144,37 @@ export const getPositionLabel = (position: string): string => {
 
 // Function to get the formation position key for a player position
 const getFormationPositionKey = (playerPosition: string): string | null => {
+  // Log the incoming player position for debugging
+  console.log('Checking position key for:', playerPosition);
+  
+  // Direct matching for formation positions that exist in the formation
+  // This ensures CAM players map directly to CAM, not CDM
+  for (const formationPos of Object.keys(formation4231)) {
+    const variants = positionMapping[formationPos as keyof typeof positionMapping];
+    if (variants && variants.some(variant => playerPosition.includes(variant))) {
+      console.log(`Direct match: ${playerPosition} -> ${formationPos}`);
+      return formationPos;
+    }
+  }
+  
+  // If no direct match to formation position, check general position mappings
   for (const [formationKey, positionVariants] of Object.entries(positionMapping)) {
     if (positionVariants.some(variant => playerPosition.includes(variant))) {
+      // Special case for positions that have been split in the formation
+      if (formationKey === 'CB') {
+        console.log(`CB match: ${playerPosition} -> CB (will split to LCB/RCB)`);
+        return 'CB'; // Will be distributed to LCB and RCB later
+      } else if (formationKey === 'CDM') {
+        console.log(`CDM match: ${playerPosition} -> CDM (will split to LCDM/RCDM)`);
+        return 'CDM'; // Will be distributed to LCDM and RCDM later
+      }
+      
+      console.log(`General match: ${playerPosition} -> ${formationKey}`);
       return formationKey;
     }
   }
+  
+  console.log(`No match found for position: ${playerPosition}`);
   return null;
 };
 
@@ -149,41 +192,79 @@ export function useFormationData(players: Player[], formationName: string = '4-2
       const formationKey = getFormationPositionKey(player.position);
       
       if (formationKey) {
+        // Add to regular position map
         if (!playersByPosition[formationKey]) {
           playersByPosition[formationKey] = [];
         }
         playersByPosition[formationKey].push(player);
+        console.log(`Assigned player ${player.name} (${player.position}) to ${formationKey}`);
+      } else {
+        console.log(`Could not assign player ${player.name} (${player.position}) to any position`);
       }
     });
     
+    console.log('Players grouped by position:', Object.keys(playersByPosition).map(key => `${key}: ${playersByPosition[key].length}`));
+    
     const formation = formation4231; // We're only using 4-2-3-1 for now
+    
+    // Initialize the consolidated map with all formation positions
+    const consolidatedPositionMap: PositionPlayersMap = {};
+    
+    // Initialize all positions with empty arrays
+    Object.keys(formation).forEach(position => {
+      consolidatedPositionMap[position] = [];
+    });
+    
+    // First, directly assign non-split positions
+    Object.entries(playersByPosition).forEach(([position, posPlayers]) => {
+      if (position in formation) {
+        // This is a direct position in the formation (like CAM, LM, etc.)
+        consolidatedPositionMap[position] = posPlayers;
+        console.log(`Directly assigned ${posPlayers.length} players to ${position}`);
+      }
+    });
+    
+    // Then handle split positions (CB -> LCB/RCB, CDM -> LCDM/RCDM)
+    if (playersByPosition['CB']) {
+      const cbPlayers = [...playersByPosition['CB']];
+      const halfLength = Math.ceil(cbPlayers.length / 2);
+      
+      consolidatedPositionMap['LCB'] = cbPlayers.slice(0, halfLength);
+      consolidatedPositionMap['RCB'] = cbPlayers.slice(halfLength);
+      console.log(`Split ${cbPlayers.length} CB players: LCB=${consolidatedPositionMap['LCB'].length}, RCB=${consolidatedPositionMap['RCB'].length}`);
+    }
+    
+    if (playersByPosition['CDM']) {
+      const cdmPlayers = [...playersByPosition['CDM']];
+      const halfLength = Math.ceil(cdmPlayers.length / 2);
+      
+      consolidatedPositionMap['LCDM'] = cdmPlayers.slice(0, halfLength);
+      consolidatedPositionMap['RCDM'] = cdmPlayers.slice(halfLength);
+      console.log(`Split ${cdmPlayers.length} CDM players: LCDM=${consolidatedPositionMap['LCDM'].length}, RCDM=${consolidatedPositionMap['RCDM'].length}`);
+    }
     
     // Map formation positions to players
     const formationPlayers: FormationPlayer[] = [];
     
     // Process each position in the formation
     Object.entries(formation).forEach(([position, posCoords]) => {
-      if (Array.isArray(posCoords)) {
-        // Handle positions with multiple spots (e.g., CB, CDM)
-        posCoords.forEach((coords, index) => {
-          const player = getBestPlayerForPosition(players, position, index);
-          formationPlayers.push({
-            player,
-            position,
-            coordinates: coords
-          });
-        });
-      } else {
-        // Handle positions with single spot
-        const player = getBestPlayerForPosition(players, position, 0);
-        formationPlayers.push({
-          player,
-          position,
-          coordinates: posCoords
-        });
-      }
+      // Get the best player for this position
+      // For split positions, we need to use the generic position for finding players
+      let searchPosition = position;
+      if (position === 'LCB' || position === 'RCB') searchPosition = 'CB';
+      if (position === 'LCDM' || position === 'RCDM') searchPosition = 'CDM';
+      
+      const player = getBestPlayerForPosition(players, searchPosition, 0);
+      formationPlayers.push({
+        player,
+        position,
+        coordinates: posCoords as PositionCoordinates
+      });
     });
     
-    return { formationPlayers, positionPlayersMap: playersByPosition };
+    // Log final position map for debugging
+    console.log('Final position map:', Object.keys(consolidatedPositionMap).map(key => `${key}: ${consolidatedPositionMap[key].length}`));
+    
+    return { formationPlayers, positionPlayersMap: consolidatedPositionMap };
   }, [players, formationName]);
 } 
