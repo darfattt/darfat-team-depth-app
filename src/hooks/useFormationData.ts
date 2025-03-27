@@ -44,7 +44,7 @@ const positionMapping = {
 // Updated coordinates to match the 800x1100 pitch dimensions
 const formation4231: FormationPositions = {
   // Striker at the top (attacking end)
-  ST: { top: '20%', left: '50%' },
+  ST: { top: '18%', left: '50%' },
   
   // Attacking Midfielders
   LM: { top: '40%', left: '20%' },

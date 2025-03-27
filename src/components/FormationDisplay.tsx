@@ -47,6 +47,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     if (!playersForPosition) return 0;
     
     console.log(`Count for ${position}: ${playersForPosition.length} players`);
+    if (playersForPosition.length > 0) {
+      console.log(`Players at ${position}: ${playersForPosition.map(p => p.name).join(', ')}`);
+    }
     return playersForPosition.length;
   };
 
@@ -171,10 +174,24 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         // Get all players for this position
         const playersForPosition = positionPlayersMap[position] || [];
         const playerCount = getPositionPlayerCount(position, playersForPosition);
-        const backupPlayers = mainPlayer 
-          ? playersForPosition.filter(p => p.id !== mainPlayer.id).slice(0, 2) 
-          : playersForPosition.slice(0, 2);
-          
+
+        // Debug log for positions with multiple players
+        if (playersForPosition.length > 1) {
+          console.log(`Position ${position} has ${playersForPosition.length} players:`, 
+            playersForPosition.map(p => p.name).join(', '));
+        }
+        
+        // Show up to 4 backup players
+        const maxBackupPlayers = 4;
+        const backupPlayersToShow = mainPlayer 
+          ? playersForPosition.filter(p => p.id !== mainPlayer.id).slice(0, maxBackupPlayers) 
+          : playersForPosition.slice(0, maxBackupPlayers);
+
+        // Calculate if there are additional players beyond what we're showing
+        const additionalPlayers = mainPlayer
+          ? playersForPosition.length - backupPlayersToShow.length - 1 // -1 for main player
+          : playersForPosition.length - backupPlayersToShow.length;
+
         const animationDelay = `${index * 0.1}s`;
         
         return (
@@ -209,15 +226,22 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     </div>
                     
                     {/* Backup players */}
-                    {backupPlayers.length > 0 && (
+                    {backupPlayersToShow.length > 0 && (
                       <div className="mt-1 pt-1 border-t border-gray-700">
-                        {backupPlayers.map((backupPlayer: Player) => (
+                        {backupPlayersToShow.map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
                             <div className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
                               {backupPlayer.name}
                             </div>
                           </div>
                         ))}
+                        
+                        {/* Show additional players indicator if needed */}
+                        {additionalPlayers > 0 && (
+                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
+                            +{additionalPlayers} more player{additionalPlayers > 1 ? 's' : ''}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -228,15 +252,22 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     </div>
                     
                     {/* Show backup players even when there's no main player */}
-                    {backupPlayers.length > 0 && (
+                    {backupPlayersToShow.length > 0 && (
                       <div className="mt-1 pt-1 border-t border-gray-700">
-                        {backupPlayers.map((backupPlayer: Player) => (
+                        {backupPlayersToShow.map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
                             <div className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
                               {backupPlayer.name}
                             </div>
                           </div>
                         ))}
+                        
+                        {/* Show additional players indicator if needed */}
+                        {additionalPlayers > 0 && (
+                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
+                            +{additionalPlayers} more player{additionalPlayers > 1 ? 's' : ''}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
