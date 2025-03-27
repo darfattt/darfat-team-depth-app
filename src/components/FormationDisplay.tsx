@@ -144,14 +144,14 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
       {/* Player count and toggle button container */}
       <div className="absolute top-4 right-4 z-20 flex flex-col items-end space-y-2">
         {/* Total players counter */}
-        <div className={`px-3 py-1 text-sm rounded-md bg-gray-800/80 text-white shadow-md`}>
+        <div className={`px-3 py-1 text-xs rounded-md bg-gray-800/80 text-white shadow-md`}>
           Total Players: {totalPlayersInFormation}
         </div>
         
         {/* Toggle button for position/count display */}
         <button 
           onClick={() => setShowPlayerCount(prev => !prev)}
-          className={`px-3 py-1 text-sm rounded-md ${colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
+          className={`px-3 py-1 text-xs rounded-md ${colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
         >
           {showPlayerCount ? "Show Detailed Positions" : "Show Player Count"}
         </button>
@@ -162,7 +162,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         style={{ backgroundImage: 'url(/pitch-bg.svg)' }}
       />
       
-      {/* Use a single loop to render both position circles and player names in the correct position */}
+      {/* Position circles with player names in a single render pass */}
       {formationPlayers.map((item, index) => {
         const { player, position, coordinates } = item;
         const positionLabel = showPlayerCount ? getPositionLabel(position) : getDetailedPositionLabel(position);
@@ -174,78 +174,74 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         const backupPlayers = mainPlayer 
           ? playersForPosition.filter(p => p.id !== mainPlayer.id).slice(0, 2) 
           : playersForPosition.slice(0, 2);
-            
+          
         const animationDelay = `${index * 0.1}s`;
         
         return (
-          <div 
-            key={`position-${position}-${index}`}
-            className="absolute z-10 animate-fadeIn"
+          <div className="absolute z-10 animate-fadeIn"
+            key={`formation-item-${position}-${index}`}
             style={{
               top: coordinates.top,
               left: coordinates.left,
               transform: 'translate(-50%, -50%)',
-              animationDelay: animationDelay,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
+              animationDelay
             }}
           >
-            {/* Position circle */}
-            <div
-              className={`w-11 h-11 rounded-full flex items-center justify-center ${colorScheme.bgPrimary} shadow-lg`}
-            >
-              <span className={`text-sm font-bold ${colorScheme.text}`}>
-                {showPlayerCount ? playerCount : positionLabel}
-              </span>
-            </div>
-            
-            {/* Player name & tag - with margin to position below the circle */}
-            <div 
-              className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg mt-2`}
-            >
-              {mainPlayer ? (
-                <>
-                  <div className={`text-md font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)}`}>
-                    {mainPlayer.name}
-                  </div>
-                  <div className={`text-xs ${getTagColor(mainPlayer)}`}>
-                    {mainPlayer.tags?.[0] || mainPlayer.experience + ' yrs'}
-                  </div>
-                  
-                  {/* Backup players */}
-                  {backupPlayers.length > 0 && (
-                    <div className="mt-1 pt-1 border-t border-gray-700">
-                      {backupPlayers.map((backupPlayer: Player) => (
-                        <div key={backupPlayer.id} className="mt-1">
-                          <div className={`text-xs font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
-                            {backupPlayer.name}
-                          </div>
-                        </div>
-                      ))}
+            <div className="flex flex-col items-center">
+              {/* Position circle */}
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center ${colorScheme.bgPrimary} shadow-lg`}
+              >
+                <span className={`text-xs font-bold ${colorScheme.text}`}>
+                  {showPlayerCount ? playerCount : positionLabel}
+                </span>
+              </div>
+              
+              {/* Player name & tag */}
+              <div className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg mt-2`}>
+                {mainPlayer ? (
+                  <>
+                    <div className={`text-xs font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)}`}>
+                      {mainPlayer.name}
                     </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className={`text-md font-bold ${colorScheme.text}`}>
-                    No player
-                  </div>
-                  
-                  {/* Show backup players even when there's no main player */}
-                  {backupPlayers.length > 0 && (
-                    <div className="mt-1 pt-1 border-t border-gray-700">
-                      {backupPlayers.map((backupPlayer: Player) => (
-                        <div key={backupPlayer.id} className="mt-1">
-                          <div className={`text-xs font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
-                            {backupPlayer.name}
-                          </div>
-                        </div>
-                      ))}
+                    <div className={`text-[10px] ${getTagColor(mainPlayer)}`}>
+                      {mainPlayer.tags?.[0] || mainPlayer.experience + ' yrs'}
                     </div>
-                  )}
-                </>
-              )}
+                    
+                    {/* Backup players */}
+                    {backupPlayers.length > 0 && (
+                      <div className="mt-1 pt-1 border-t border-gray-700">
+                        {backupPlayers.map((backupPlayer: Player) => (
+                          <div key={backupPlayer.id} className="mt-1">
+                            <div className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
+                              {backupPlayer.name}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-xs font-bold ${colorScheme.text}`}>
+                      No player
+                    </div>
+                    
+                    {/* Show backup players even when there's no main player */}
+                    {backupPlayers.length > 0 && (
+                      <div className="mt-1 pt-1 border-t border-gray-700">
+                        {backupPlayers.map((backupPlayer: Player) => (
+                          <div key={backupPlayer.id} className="mt-1">
+                            <div className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
+                              {backupPlayer.name}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         );
