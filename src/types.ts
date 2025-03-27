@@ -3,31 +3,31 @@ export interface Player {
   name: string;
   position: string;
   age: number;
-  height: string;
-  weight: number;
-  experience: number;
+  height: number;  // in cm
+  weight: number;  // in kg
+  experience: number;  // years
   domisili: string;
   jurusan: string;
-  foot: 'left' | 'right' | 'both';
+  foot: string;
   tags: string[];
-  status: string[];
+  status: string;
 }
 
 export interface Team {
   id: string;
   name: string;
-  abbreviation: string;
-  league: string;
-  division: string;
   players: Player[];
 }
 
 export interface PositionGroup {
-  name: string;
+  position: string;
   players: Player[];
 }
 
 export interface DepthChartPosition {
   position: string;
-  depth: Player[];
+  coordinates: {
+    top: string;
+    left: string;
+  };
 } 

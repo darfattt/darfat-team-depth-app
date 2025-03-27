@@ -1,6 +1,6 @@
 # Soccer Team Depth Chart App
 
-A modern React TypeScript application for managing and visualizing soccer team depth charts. This application allows you to view, filter, and organize players by position, foot preference, tags, and status.
+A modern React TypeScript application for managing and visualizing soccer team depth charts. This application allows you to view, filter, and organize players by position, foot preference, tags, and status. It also features a visual formation display that shows your team in a 4-2-3-1 formation.
 
 ## Features
 
@@ -10,6 +10,10 @@ A modern React TypeScript application for managing and visualizing soccer team d
 - Filter players by position, foot preference, tags, and status
 - Sort by any column by clicking the header
 - Color-coded player status indicators
+- **NEW: Visual 4-2-3-1 formation display**
+- Side-by-side view of player list and formation
+- Animated player position display
+- Interactive tooltips with player details
 - Modern, clean UI design
 - Responsive layout that works on both desktop and mobile devices
 
@@ -28,6 +32,22 @@ The application tracks the following data for each player:
 - Foot: Preferred foot (left, right, or both)
 - Tags: Player characteristics or skills (multiple values)
 - Status: Player status indicators (HG, Player To Watch, Unknown)
+
+## Formation Display
+
+The formation display automatically assigns players to positions based on:
+
+1. Position match (e.g., CB players will be placed in CB positions)
+2. Experience level (more experienced players are preferred)
+3. Age (younger players with equal experience are preferred)
+
+The display includes:
+- Player initials in position circles
+- First name display below position
+- Player's primary tag displayed
+- Green text for "HG" status players
+- Yellow text for "Player To Watch" status players
+- Hover tooltips with additional player details
 
 ## Getting Started
 
@@ -62,6 +82,8 @@ npm run dev
 - Use the search box to find specific players
 - Use the filters to narrow down the player list
 - Click on column headers to sort the data
+- Click "Show Formation" to see the 4-2-3-1 formation display
+- Hover over players in the formation to see more details
 - Upload custom Excel files using the "Upload Excel File" button
 - Download a sample Excel template using the "Download Sample" button
 
