@@ -792,7 +792,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
       {/* Detailed stats modal */}
       {showStatsModal && (
         <TeamStatsModal 
-          players={players} 
+          players={displayPlayers} 
           onClose={() => setShowStatsModal(false)} 
         />
       )}
