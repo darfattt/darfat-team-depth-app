@@ -41,26 +41,26 @@ const positionMapping = {
 };
 
 // Define positions in 4-2-3-1 formation with TOP TO BOTTOM orientation
-// Updated coordinates to match the improved background and reference image for 900px height
+// Updated coordinates to match the 800x1100 pitch dimensions
 const formation4231: FormationPositions = {
   // Striker at the top (attacking end)
-  ST: { top: '10%', left: '50%' },
+  ST: { top: '20%', left: '50%' },
   
   // Attacking Midfielders
-  LM: { top: '26%', left: '18%' },
-  CAM: { top: '26%', left: '50%' },
-  RM: { top: '26%', left: '82%' },
+  LM: { top: '40%', left: '20%' },
+  CAM: { top: '35%', left: '50%' },
+  RM: { top: '40%', left: '80%' },
   
   // Defensive Midfielders
-  CDM: [{ top: '42%', left: '38%' }, { top: '42%', left: '62%' }],
+  CDM: [{ top: '60%', left: '35%' }, { top: '60%', left: '65%' }],
   
   // Defenders (back line)
-  LB: { top: '66%', left: '12%' },
-  CB: [{ top: '66%', left: '38%' }, { top: '66%', left: '62%' }],
-  RB: { top: '66%', left: '88%' },
+  LB: { top: '80%', left: '15%' },
+  CB: [{ top: '80%', left: '35%' }, { top: '80%', left: '65%' }],
+  RB: { top: '80%', left: '85%' },
   
   // Goalkeeper at the bottom (defensive end)
-  GK: { top: '85%', left: '50%' }
+  GK: { top: '92%', left: '50%' }
 };
 
 // Function to find players for a specific position

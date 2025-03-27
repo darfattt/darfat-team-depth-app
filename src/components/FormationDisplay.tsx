@@ -88,7 +88,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({ players, teamColor 
   };
 
   return (
-    <div className="relative w-full h-[1200px] border border-gray-600 rounded-lg overflow-hidden">
+    <div className="relative w-full h-[1210px] border border-gray-600 rounded-lg overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
         style={{ backgroundImage: 'url(/pitch-bg.svg)' }}
