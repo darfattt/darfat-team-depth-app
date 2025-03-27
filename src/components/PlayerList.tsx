@@ -6,21 +6,66 @@ import { generateSampleExcelFile, parseExcelData, generateExcelFile } from '../u
 
 interface PlayerListProps {
   players: Player[]
-  setPlayers: React.Dispatch<React.SetStateAction<Player[]>>
+  filters: {
+    position: string;
+    status: string;
+    search: string;
+    positionArray: string[];
+    statusArray: string[];
+  }
+  onFilterChange: (filters: {
+    position: string;
+    status: string;
+    search: string;
+    positionArray: string[];
+    statusArray: string[];
+  }) => void
 }
 
-const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [positionFilters, setPositionFilters] = useState<string[]>([])
+const PlayerList: React.FC<PlayerListProps> = ({ 
+  players, 
+  filters,
+  onFilterChange
+}) => {
+  // Use initial values from props
+  const [searchTerm, setSearchTerm] = useState(filters.search || '')
+  const [positionFilters, setPositionFilters] = useState<string[]>(filters.positionArray || [])
   const [footFilters, setFootFilters] = useState<string[]>([])
   const [tagFilters, setTagFilters] = useState<string[]>([])
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<string[]>(filters.statusArray || [])
+  
   const [sortField, setSortField] = useState<keyof Player>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
+  // Update parent component's filters when local filters change
+  useEffect(() => {
+    // Pass both string format and array format to parent
+    onFilterChange({
+      position: positionFilters.length === 1 ? positionFilters[0] : '',
+      status: statusFilter.length === 1 ? statusFilter[0] : '',
+      search: searchTerm,
+      positionArray: positionFilters,
+      statusArray: statusFilter
+    });
+  }, [positionFilters, statusFilter, searchTerm, onFilterChange]);
+  
+  // Update local state when props change
+  useEffect(() => {
+    setSearchTerm(filters.search || '');
+    
+    // Use array filters directly from props
+    if (filters.positionArray && JSON.stringify(positionFilters) !== JSON.stringify(filters.positionArray)) {
+      setPositionFilters(filters.positionArray);
+    }
+    
+    if (filters.statusArray && JSON.stringify(statusFilter) !== JSON.stringify(filters.statusArray)) {
+      setStatusFilter(filters.statusArray);
+    }
+  }, [filters]);
+
   // Helper function to ensure tags/status is always an array
   const ensureArrayField = (field: any): string[] => {
     if (!field) return [];
@@ -56,7 +101,8 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
         const excelData = XLSX.utils.sheet_to_json(worksheet)
         
         const parsedPlayers = parseExcelData(excelData)
-        setPlayers(parsedPlayers)
+        // Replace setPlayers with a local variable since we don't need to update parent players
+        console.log('Parsed players from Excel:', parsedPlayers.length)
         setIsLoading(false)
       } catch (error) {
         console.error('Error parsing Excel file:', error)
@@ -119,6 +165,10 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
     )
   }
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
   // Clear all filters
   const clearFilters = () => {
     setPositionFilters([]);
@@ -148,9 +198,10 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
   })
 
   const filteredPlayers = sortedPlayers.filter(player => {
-    const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         player.domisili.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         player.jurusan.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = searchTerm === '' || 
+                         player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (player.domisili?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (player.jurusan?.toLowerCase().includes(searchTerm.toLowerCase()));
     
     // Check position filters (any match)
     const matchesPosition = positionFilters.length === 0 || 
@@ -232,8 +283,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
   };
 
   // Check if any filters are active
-  const hasActiveFilters = positionFilters.length > 0 || footFilters.length > 0 || 
-                           tagFilters.length > 0 || statusFilter.length > 0 || searchTerm !== '';
+  const hasActiveFilters = positionFilters.length > 0 || statusFilter.length > 0 || searchTerm !== '';
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -278,7 +328,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
             placeholder="Search players, domisili, jurusan..."
             className="input w-full"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
         
@@ -346,7 +396,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
             <span className="text-sm font-medium text-gray-700">Position</span>
             {positionFilters.length > 0 && (
               <button 
-                onClick={() => setPositionFilters([])}
+                onClick={() => clearFilters()}
                 className="text-xs text-blue-600 hover:text-blue-800"
               >
                 Clear
@@ -375,7 +425,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
             <span className="text-sm font-medium text-gray-700">Status</span>
             {statusFilter.length > 0 && (
               <button 
-                onClick={() => setStatusFilter([])}
+                onClick={() => clearFilters()}
                 className="text-xs text-blue-600 hover:text-blue-800"
               >
                 Clear
@@ -401,7 +451,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
       </div>
 
       {/* Active tag, foot, and status filters display */}
-      {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || searchTerm) && (
+      {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0) && (
         <div className="flex flex-wrap items-center gap-2">
           {searchTerm && (
             <span className="filter-badge filter-badge-search flex items-center">
@@ -439,7 +489,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, setPlayers }) => {
             </span>
           ))}
           
-          {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || searchTerm) && (
+          {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0) && (
             <button 
               onClick={clearFilters}
               className="text-sm text-red-600 hover:text-red-800 ml-2"

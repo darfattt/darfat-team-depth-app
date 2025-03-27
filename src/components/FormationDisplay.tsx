@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
-import useFormationData, { getPositionLabel, FormationPlayer } from '../hooks/useFormationData';
+import React, { useMemo, useState } from 'react';
+import { useFormationData } from '../hooks/useFormationData';
+import { getPositionLabel, FormationPlayer } from '../hooks/useFormationData';
 import { Player } from '../types';
 
 type FormationDisplayProps = {
   players: Player[];
-  teamColor: string;
+  filteredPlayers?: Player[];
+  formation?: string;
+  teamColor?: string;
 };
 
 type ColorScheme = {
@@ -15,8 +18,29 @@ type ColorScheme = {
   textHighlight: string;
 };
 
-const FormationDisplay: React.FC<FormationDisplayProps> = ({ players, teamColor }) => {
-  const { formationPlayers, positionPlayersMap } = useFormationData(players);
+const FormationDisplay: React.FC<FormationDisplayProps> = ({
+  players,
+  filteredPlayers,
+  formation = "4-2-3-1",
+  teamColor = "blue"
+}) => {
+  // Add state for the display toggle
+  const [showPlayerCount, setShowPlayerCount] = useState(false);
+  
+  console.log('All players:', players.length);
+  console.log('Filtered players:', filteredPlayers?.length);
+  
+  const displayPlayers = (!filteredPlayers || filteredPlayers.length === 0) 
+    ? players 
+    : filteredPlayers;
+  
+  const { formationPlayers, positionPlayersMap } = useFormationData(displayPlayers, formation);
+
+  // Calculate total number of players in the formation
+  const totalPlayersInFormation = Object.values(positionPlayersMap).reduce(
+    (total, positionPlayers) => total + positionPlayers.length, 
+    0
+  );
 
   const colorScheme = useMemo((): ColorScheme => {
     switch (teamColor) {
@@ -89,6 +113,22 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({ players, teamColor 
 
   return (
     <div className="relative w-full h-[1210px] border border-gray-600 rounded-lg overflow-hidden">
+      {/* Player count and toggle button container */}
+      <div className="absolute top-4 right-4 z-20 flex flex-col items-end space-y-2">
+        {/* Total players counter */}
+        <div className={`px-3 py-1 text-sm rounded-md bg-gray-800/80 text-white shadow-md`}>
+          Total Players: {totalPlayersInFormation}
+        </div>
+        
+        {/* Toggle button for position/count display */}
+        <button 
+          onClick={() => setShowPlayerCount(prev => !prev)}
+          className={`px-3 py-1 text-sm rounded-md ${colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
+        >
+          {showPlayerCount ? "Show Positions" : "Show Player Count"}
+        </button>
+      </div>
+      
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
         style={{ backgroundImage: 'url(/pitch-bg.svg)' }}
@@ -107,6 +147,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({ players, teamColor 
             
         const animationDelay = `${index * 0.1}s`;
         
+        // Calculate player count for this position
+        const playerCount = playersForPosition.length;
+        
         return (
           <div
             key={`${position}-${index}`}
@@ -121,7 +164,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({ players, teamColor 
             <div
               className={`w-11 h-11 rounded-full flex items-center justify-center mb-1 ${colorScheme.bgPrimary} shadow-lg`}
             >
-              <span className={`text-sm font-bold ${colorScheme.text}`}>{positionLabel}</span>
+              <span className={`text-sm font-bold ${colorScheme.text}`}>
+                {showPlayerCount ? playerCount : positionLabel}
+              </span>
             </div>
             
             {/* Player name & tag */}

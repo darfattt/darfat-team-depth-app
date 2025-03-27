@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import PlayerList from './components/PlayerList'
 import FormationDisplay from './components/FormationDisplay'
 import { Player } from './types'
@@ -14,12 +14,30 @@ import {
 const teamColors = ['red', 'blue', 'green', 'yellow', 'gray'] as const;
 type TeamColor = typeof teamColors[number];
 
+// Define Filters type here since it's used in App.tsx
+export interface Filters {
+  position: string;
+  status: string;
+  search: string;
+  positionArray: string[];
+  statusArray: string[];
+}
+
 function App() {
   const [players, setPlayers] = useState<Player[]>([])
+  const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([])
+  const [formationPlayers, setFormationPlayers] = useState<Player[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'list' | 'formation'>('list')
   const [showInfo, setShowInfo] = useState(false)
   const [teamColor, setTeamColor] = useState<TeamColor>('green')
+  const [filters, setFilters] = useState<Filters>({
+    position: '',
+    status: '',
+    search: '',
+    positionArray: [],
+    statusArray: []
+  });
 
   useEffect(() => {
     const initializeData = async () => {
@@ -36,12 +54,46 @@ function App() {
     initializeData()
   }, [])
 
+  // This effect updates filteredPlayers whenever filters change
+  useEffect(() => {
+    let result = [...players];
+    
+    if (filters.positionArray.length > 0) {
+      result = result.filter(player => 
+        filters.positionArray.includes(player.position)
+      );
+    }
+    
+    if (filters.statusArray.length > 0) {
+      result = result.filter(player => {
+        const playerStatus = Array.isArray(player.status) ? player.status : [player.status];
+        return filters.statusArray.some(status => playerStatus.includes(status));
+      });
+    }
+    
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(player => 
+        player.name.toLowerCase().includes(searchLower) ||
+        (player.domisili && player.domisili.toLowerCase().includes(searchLower)) ||
+        (player.jurusan && player.jurusan.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    setFilteredPlayers(result);
+    
+    // Automatically update formation players when filters change
+    setFormationPlayers(result.length > 0 ? result : players);
+  }, [players, filters]);
+
   const handlePlayersUpdate = (newPlayers: Player[]) => {
     setPlayers(newPlayers)
   }
 
   const toggleView = () => {
     setActiveTab(activeTab === 'list' ? 'formation' : 'list')
+    // No longer need a separate call to update formation players
+    // as it's already updated whenever filters change
   }
 
   const toggleInfo = () => {
@@ -65,6 +117,27 @@ function App() {
       default: return 'bg-green-600 hover:bg-green-700';
     }
   }
+
+  const handleFilterChange = useCallback((newFilters: {
+    position: string;
+    status: string;
+    search: string;
+    positionArray?: string[];
+    statusArray?: string[];
+  }) => {
+    setFilters(prev => ({
+      ...prev,
+      position: newFilters.position,
+      status: newFilters.status,
+      search: newFilters.search,
+      positionArray: newFilters.positionArray || prev.positionArray,
+      statusArray: newFilters.statusArray || prev.statusArray
+    }));
+  }, []);
+
+  const applyToFormation = () => {
+    setActiveTab('formation');
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 pb-10">
@@ -124,20 +197,60 @@ function App() {
         ) : (
           <>
             {activeTab === 'list' ? (
-              <PlayerList players={players} setPlayers={setPlayers} />
+              <div className="space-y-4">
+                <PlayerList 
+                  players={players} 
+                  filters={filters} 
+                  onFilterChange={handleFilterChange} 
+                />
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-500">
+                    {filteredPlayers.length} of {players.length} players shown
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('formation')}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-md"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                    </svg>
+                    <span>View in Formation</span>
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-bold text-gray-800">4-2-3-1 Formation</h2>
-                  <button
-                    onClick={cycleTeamColor}
-                    className="flex items-center space-x-1 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md text-sm"
-                  >
-                    <SwatchIcon className="h-4 w-4" />
-                    <span>Change Colors</span>
-                  </button>
+                  <div className="flex space-x-2">
+                    {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search) && (
+                      <div className="flex items-center flex-wrap text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-md max-w-md">
+                        <span className="mr-2 mb-1">Filtered:</span>
+                        {filters.positionArray.map(pos => (
+                          <span key={pos} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1 mb-1">{pos}</span>
+                        ))}
+                        {filters.statusArray.map(status => (
+                          <span key={status} className="bg-green-100 text-green-800 px-2 py-0.5 rounded mr-1 mb-1">{status}</span>
+                        ))}
+                        {filters.search && (
+                          <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">{filters.search}</span>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={cycleTeamColor}
+                      className="flex items-center space-x-1 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md text-sm whitespace-nowrap"
+                    >
+                      <SwatchIcon className="h-4 w-4" />
+                      <span>Change Colors</span>
+                    </button>
+                  </div>
                 </div>
-                <FormationDisplay players={players} teamColor={teamColor} />
+                <FormationDisplay 
+                  players={players} 
+                  filteredPlayers={formationPlayers} 
+                  teamColor={teamColor} 
+                />
                 <div className="text-sm text-gray-500 italic text-center mt-2">
                   Note: Players are assigned to positions based on their listed position, experience, and age
                 </div>

@@ -125,55 +125,65 @@ export const getPositionLabel = (position: string): string => {
   }
 };
 
-export default function useFormationData(players: Player[]) {
-  // Create a map of players for each position
-  const positionPlayersMap = useMemo<PositionPlayersMap>(() => {
-    const result: PositionPlayersMap = {};
+// Function to get the formation position key for a player position
+const getFormationPositionKey = (playerPosition: string): string | null => {
+  for (const [formationKey, positionVariants] of Object.entries(positionMapping)) {
+    if (positionVariants.some(variant => playerPosition.includes(variant))) {
+      return formationKey;
+    }
+  }
+  return null;
+};
+
+export function useFormationData(players: Player[], formationName: string = '4-2-3-1'): {
+  formationPlayers: FormationPlayer[];
+  positionPlayersMap: PositionPlayersMap;
+} {
+  return useMemo(() => {
+    // Group players by position
+    const playersByPosition: PositionPlayersMap = {};
     
-    // Get all possible positions in the formation
-    Object.keys(formation4231).forEach(position => {
-      // Get all players that can play in this position
-      result[position] = getPlayersForPosition(players, position);
+    // Process each player
+    players.forEach(player => {
+      // Find matching formation position key
+      const formationKey = getFormationPositionKey(player.position);
+      
+      if (formationKey) {
+        if (!playersByPosition[formationKey]) {
+          playersByPosition[formationKey] = [];
+        }
+        playersByPosition[formationKey].push(player);
+      }
     });
     
-    return result;
-  }, [players]);
-
-  const formationPlayers = useMemo<FormationPlayer[]>(() => {
-    const result: FormationPlayer[] = [];
+    const formation = formation4231; // We're only using 4-2-3-1 for now
+    
+    // Map formation positions to players
+    const formationPlayers: FormationPlayer[] = [];
     
     // Process each position in the formation
-    Object.keys(formation4231).forEach(position => {
-      const posCoordinates = formation4231[position];
-      
-      // Handle array of positions (e.g., CB and CDM positions with multiple players)
-      if (Array.isArray(posCoordinates)) {
-        posCoordinates.forEach((coords, index) => {
+    Object.entries(formation).forEach(([position, posCoords]) => {
+      if (Array.isArray(posCoords)) {
+        // Handle positions with multiple spots (e.g., CB, CDM)
+        posCoords.forEach((coords, index) => {
           const player = getBestPlayerForPosition(players, position, index);
-          result.push({
-            player: player,
+          formationPlayers.push({
+            player,
             position,
             coordinates: coords
           });
         });
       } else {
-        // Handle single position
+        // Handle positions with single spot
         const player = getBestPlayerForPosition(players, position, 0);
-        result.push({
-          player: player,
+        formationPlayers.push({
+          player,
           position,
-          coordinates: posCoordinates
+          coordinates: posCoords
         });
       }
     });
     
-    return result;
-  }, [players]);
-  
-  return { 
-    formationPlayers, 
-    formation: formation4231, 
-    positionPlayersMap,
-    getPositionLabel 
-  };
+    return { formationPlayers, positionPlayersMap: playersByPosition };
+  }, [players, formationName]);
 } 
