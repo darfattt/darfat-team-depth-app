@@ -26,6 +26,10 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
 }) => {
   // Add state for the display toggle
   const [showPlayerCount, setShowPlayerCount] = useState(false);
+  // State for showing team stats
+  const [showTeamStats, setShowTeamStats] = useState(false);
+  // State for showing detailed stats modal
+  const [showStatsModal, setShowStatsModal] = useState(false);
   // State to track which player is being hovered for tooltip
   const [hoveredPlayer, setHoveredPlayer] = useState<Player | null>(null);
   // State to track hover position for the tooltip
@@ -314,6 +318,296 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     setHoveredPosition(null);
   };
 
+  // Function to calculate team statistics
+  const calculateTeamStats = (players: Player[]) => {
+    // Base stats object
+    const stats = {
+      totalPlayers: players.length,
+      byStatus: {} as Record<string, number>,
+      byTag: {} as Record<string, number>,
+      byPosition: {} as Record<string, number>,
+      byFoot: {} as Record<string, number>,
+      byDomisili: {} as Record<string, number>,
+      byJurusan: {} as Record<string, number>,
+      averageAge: 0,
+      averageExperience: 0
+    };
+    
+    // Initialize counters for averages
+    let totalAge = 0;
+    let totalExperience = 0;
+    let ageCount = 0;
+    let experienceCount = 0;
+    
+    // Calculate all stats
+    players.forEach(player => {
+      // Count by position
+      if (player.position) {
+        stats.byPosition[player.position] = (stats.byPosition[player.position] || 0) + 1;
+      }
+      
+      // Count by status
+      if (player.status) {
+        const status = Array.isArray(player.status) ? player.status[0] : player.status;
+        stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
+      }
+      
+      // Count by tag (first tag only)
+      if (player.tags && player.tags.length > 0) {
+        player.tags.forEach(tag => {
+          stats.byTag[tag] = (stats.byTag[tag] || 0) + 1;
+        });
+      }
+      
+      // Count by foot
+      if (player.foot) {
+        stats.byFoot[player.foot] = (stats.byFoot[player.foot] || 0) + 1;
+      }
+      
+      // Count by domisili
+      if (player.domisili) {
+        stats.byDomisili[player.domisili] = (stats.byDomisili[player.domisili] || 0) + 1;
+      }
+      
+      // Count by jurusan
+      if (player.jurusan) {
+        stats.byJurusan[player.jurusan] = (stats.byJurusan[player.jurusan] || 0) + 1;
+      }
+      
+      // Sum for averages
+      if (player.age) {
+        totalAge += player.age;
+        ageCount++;
+      }
+      
+      if (player.experience !== undefined) {
+        totalExperience += player.experience;
+        experienceCount++;
+      }
+    });
+    
+    // Calculate averages
+    stats.averageAge = ageCount > 0 ? Math.round((totalAge / ageCount) * 10) / 10 : 0;
+    stats.averageExperience = experienceCount > 0 ? Math.round((totalExperience / experienceCount) * 10) / 10 : 0;
+    
+    return stats;
+  };
+
+  // Team Stats Summary component for basic stats
+  const TeamStatsSummary = ({ players }: { players: Player[] }) => {
+    const stats = calculateTeamStats(players);
+    
+    return (
+      <div className="absolute bottom-4 left-4 z-20 p-3 bg-gray-900/90 rounded-lg shadow-lg max-w-[400px]">
+        <div className="flex flex-col gap-2">
+          <div className="text-white font-bold text-sm border-b border-gray-700 pb-1 flex justify-between items-center">
+            <span>Team Statistics ({stats.totalPlayers} players)</span>
+            <button 
+              className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-md transition-colors"
+              onClick={() => setShowStatsModal(true)}
+            >
+              View Details
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {/* Basic stats */}
+            <div className="flex flex-col gap-1">
+              <div className="text-gray-300 text-xs font-medium">Averages:</div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-300">Age:</span>
+                <span className="text-white font-medium">{stats.averageAge} years</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-300">Experience:</span>
+                <span className="text-white font-medium">{stats.averageExperience} years</span>
+              </div>
+            </div>
+            
+            {/* By foot */}
+            <div className="flex flex-col gap-1">
+              <div className="text-gray-300 text-xs font-medium">By Foot:</div>
+              <div className="grid grid-cols-2 gap-1">
+                {Object.entries(stats.byFoot).map(([foot, count]) => (
+                  <div key={foot} className="flex justify-between text-xs">
+                    <span className="text-gray-300">{foot}:</span>
+                    <span className="text-white font-medium">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Status counts */}
+          <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-gray-700">
+            <div className="text-gray-300 text-xs font-medium">By Status:</div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+              {Object.entries(stats.byStatus)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 4)
+                .map(([status, count]) => {
+                  const percentage = Math.round((count / stats.totalPlayers) * 100);
+                  return (
+                    <div key={status} className="flex justify-between text-xs">
+                      <span className={status === 'HG' ? 'text-yellow-300' : status === 'Player To Watch' ? 'text-green-300' : 'text-gray-300'}>
+                        {status}:
+                      </span>
+                      <span className="text-white font-medium">
+                        {count} <span className="text-gray-400">({percentage}%)</span>
+                      </span>
+                    </div>
+                  );
+                })
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Detailed stats modal
+  const TeamStatsModal = ({ players, onClose }: { players: Player[], onClose: () => void }) => {
+    const stats = calculateTeamStats(players);
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+        <div className="bg-gray-900 rounded-lg shadow-2xl p-4 max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-center border-b border-gray-700 pb-2 mb-4">
+            <h3 className="text-lg font-bold text-white">Complete Team Statistics</h3>
+            <button 
+              className="text-gray-400 hover:text-white"
+              onClick={onClose}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Averages section */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">Averages</h4>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-300">Average Age:</span>
+                <span className="text-white font-medium">{stats.averageAge} years</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Average Experience:</span>
+                <span className="text-white font-medium">{stats.averageExperience} years</span>
+              </div>
+            </div>
+            
+            {/* By Foot section */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">By Foot</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(stats.byFoot).map(([foot, count]) => (
+                  <div key={foot} className="flex justify-between text-sm">
+                    <span className="text-gray-300">{foot}:</span>
+                    <span className="text-white font-medium">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* By Status section */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">By Status</h4>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                {Object.entries(stats.byStatus)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([status, count]) => {
+                    const percentage = Math.round((count / stats.totalPlayers) * 100);
+                    return (
+                      <div key={status} className="flex justify-between text-sm">
+                        <span className={status === 'HG' ? 'text-yellow-300' : status === 'Player To Watch' ? 'text-green-300' : 'text-gray-300'}>
+                          {status}:
+                        </span>
+                        <span className="text-white font-medium">
+                          {count} <span className="text-gray-400">({percentage}%)</span>
+                        </span>
+                      </div>
+                    );
+                  })
+                }
+              </div>
+            </div>
+            
+            {/* By Tag section */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">By Tag</h4>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                {Object.entries(stats.byTag)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([tag, count]) => (
+                    <div key={tag} className="flex justify-between text-sm">
+                      <span className="text-gray-300 truncate max-w-[120px]">{tag}:</span>
+                      <span className="text-white font-medium">{count}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+            
+            {/* By Domisili section */}
+            {Object.keys(stats.byDomisili).length > 0 && (
+              <div className="bg-gray-800/60 p-3 rounded-lg">
+                <h4 className="text-white font-bold text-sm mb-2">By Domisili</h4>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {Object.entries(stats.byDomisili)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([domisili, count]) => (
+                      <div key={domisili} className="flex justify-between text-sm">
+                        <span className="text-gray-300 truncate max-w-[120px]">{domisili}:</span>
+                        <span className="text-white font-medium">{count}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+            
+            {/* By Jurusan section */}
+            {Object.keys(stats.byJurusan).length > 0 && (
+              <div className="bg-gray-800/60 p-3 rounded-lg">
+                <h4 className="text-white font-bold text-sm mb-2">By Jurusan</h4>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {Object.entries(stats.byJurusan)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([jurusan, count]) => (
+                      <div key={jurusan} className="flex justify-between text-sm">
+                        <span className="text-gray-300 truncate max-w-[120px]">{jurusan}:</span>
+                        <span className="text-white font-medium">{count}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+            
+            {/* By Position section */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">By Position</h4>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                {Object.entries(stats.byPosition)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([position, count]) => (
+                    <div key={position} className="flex justify-between text-sm">
+                      <span className="text-gray-300">{position}:</span>
+                      <span className="text-white font-medium">{count}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="relative w-full h-[1210px] border border-gray-600 rounded-lg overflow-hidden">
       {/* Player count and toggle button container */}
@@ -323,13 +617,24 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
           Total Players: {totalPlayersInFormation}
         </div>
         
-        {/* Toggle button for position/count display */}
-        <button 
-          onClick={() => setShowPlayerCount(prev => !prev)}
-          className={`px-3 py-1 text-xs rounded-md ${colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
-        >
-          {showPlayerCount ? "Show Detailed Positions" : "Show Player Count"}
-        </button>
+        {/* Toggle buttons container */}
+        <div className="flex flex-col space-y-2">
+          {/* Toggle button for position/count display */}
+          <button 
+            onClick={() => setShowPlayerCount(prev => !prev)}
+            className={`px-3 py-1 text-xs rounded-md ${colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
+          >
+            {showPlayerCount ? "Show Detailed Positions" : "Show Player Count"}
+          </button>
+          
+          {/* Toggle button for team stats */}
+          <button 
+            onClick={() => setShowTeamStats(prev => !prev)}
+            className={`px-3 py-1 text-xs rounded-md ${showTeamStats ? colorScheme.bgSecondary : colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
+          >
+            {showTeamStats ? "Hide Team Stats" : "Show Team Stats"}
+          </button>
+        </div>
       </div>
       
       <div
@@ -480,6 +785,17 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
           </div>
         );
       })}
+      
+      {/* Team Stats Summary component - conditionally shown */}
+      {showTeamStats && <TeamStatsSummary players={displayPlayers} />}
+      
+      {/* Detailed stats modal */}
+      {showStatsModal && (
+        <TeamStatsModal 
+          players={players} 
+          onClose={() => setShowStatsModal(false)} 
+        />
+      )}
     </div>
   );
 };
