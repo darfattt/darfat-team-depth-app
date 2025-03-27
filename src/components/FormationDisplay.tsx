@@ -26,6 +26,12 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
 }) => {
   // Add state for the display toggle
   const [showPlayerCount, setShowPlayerCount] = useState(false);
+  // State to track which player is being hovered for tooltip
+  const [hoveredPlayer, setHoveredPlayer] = useState<Player | null>(null);
+  // State to track hover position for the tooltip
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  // State to track which position is being hovered for position stats
+  const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
   
   console.log('All players:', players.length);
   console.log('Filtered players:', filteredPlayers?.length);
@@ -142,6 +148,172 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     }
   };
 
+  // Create a player info tooltip component
+  const PlayerTooltip = ({ player }: { player: Player }) => {
+    if (!player) return null;
+    
+    return (
+      <div className="fixed z-50 bg-gray-900/95 p-3 rounded-md shadow-xl text-left min-w-[220px]"
+        style={{
+          top: `${tooltipPosition.y - 10}px`,
+          left: `${tooltipPosition.x}px`,
+          transform: 'translate(-50%, -100%)'
+        }}
+      >
+        <div className="flex flex-col gap-1">
+          <div className="text-white font-bold text-sm">{player.name}</div>
+          <div className="text-gray-300 text-xs">
+            <span className="font-medium">Position:</span> {player.position}
+          </div>
+          {player.age && (
+            <div className="text-gray-300 text-xs">
+              <span className="font-medium">Age:</span> {player.age}
+            </div>
+          )}
+          {player.experience !== undefined && (
+            <div className="text-gray-300 text-xs">
+              <span className="font-medium">Experience:</span> {player.experience} years
+            </div>
+          )}
+          {player.tags && player.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {player.tags.map((tag, idx) => (
+                <span key={idx} className="text-[9px] px-1.5 py-0.5 bg-gray-700 rounded-sm text-gray-300">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+          {player.status && (
+            <div className="text-xs mt-1">
+              <span className="font-medium text-gray-300">Status:</span> 
+              <span className={`${player.status === 'HG' ? 'text-yellow-300' : 'text-green-300'} ml-1`}>
+                {Array.isArray(player.status) ? player.status.join(', ') : player.status}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="absolute left-1/2 bottom-0 w-0 h-0 -mb-2 border-solid border-t-[8px] border-x-[6px] border-b-0 border-x-transparent border-t-gray-900/95" style={{ transform: 'translateX(-50%)' }}></div>
+      </div>
+    );
+  };
+
+  // Function to handle mouse enter on player name
+  const handlePlayerHover = (player: Player, event: React.MouseEvent) => {
+    console.log("Hovering over player:", player.name);
+    setHoveredPlayer(player);
+    // Get position for the tooltip
+    const rect = event.currentTarget.getBoundingClientRect();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+    
+    // Position the tooltip above the player name including scroll offset
+    setTooltipPosition({
+      x: rect.left + rect.width / 2 + scrollLeft,
+      y: rect.top + scrollTop
+    });
+  };
+
+  // Function to handle mouse leave
+  const handlePlayerLeave = () => {
+    setHoveredPlayer(null);
+  };
+
+  // Position stats tooltip component
+  const PositionStatsTooltip = ({ position, players }: { position: string, players: Player[] }) => {
+    if (!players || players.length === 0) return null;
+    
+    // Count players by status
+    const statusCounts: Record<string, number> = {};
+    players.forEach(player => {
+      if (player.status) {
+        const status = Array.isArray(player.status) ? player.status[0] : player.status;
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      } else {
+        statusCounts["No Status"] = (statusCounts["No Status"] || 0) + 1;
+      }
+    });
+    
+    // Count players by tag (first tag only for simplicity)
+    const tagCounts: Record<string, number> = {};
+    players.forEach(player => {
+      if (player.tags && player.tags.length > 0) {
+        const tag = player.tags[0];
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      } else {
+        tagCounts["No Tag"] = (tagCounts["No Tag"] || 0) + 1;
+      }
+    });
+    
+    return (
+      <div className="fixed z-50 bg-gray-900/95 p-3 rounded-md shadow-xl text-left min-w-[200px]"
+        style={{
+          top: `${tooltipPosition.y - 10}px`,
+          left: `${tooltipPosition.x}px`,
+          transform: 'translate(-50%, -100%)'
+        }}
+      >
+        <div className="flex flex-col gap-2">
+          <div className="text-white font-bold text-sm border-b border-gray-700 pb-1">
+            {getPositionLabel(position)} Stats ({players.length} players)
+          </div>
+          
+          {/* Status counts */}
+          <div className="flex flex-col gap-1">
+            <div className="text-gray-300 text-xs font-medium">By Status:</div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+              {Object.entries(statusCounts).map(([status, count]) => (
+                <div key={status} className="flex justify-between text-xs">
+                  <span className={status === 'HG' ? 'text-yellow-300' : status === 'Player To Watch' ? 'text-green-300' : 'text-gray-300'}>
+                    {status}:
+                  </span>
+                  <span className="text-white font-medium">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Tag counts */}
+          {Object.keys(tagCounts).length > 0 && (
+            <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-gray-700">
+              <div className="text-gray-300 text-xs font-medium">By Tag:</div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                {Object.entries(tagCounts).map(([tag, count]) => (
+                  <div key={tag} className="flex justify-between text-xs">
+                    <span className="text-gray-300 truncate max-w-[90px]">{tag}:</span>
+                    <span className="text-white font-medium">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="absolute left-1/2 bottom-0 w-0 h-0 -mb-2 border-solid border-t-[8px] border-x-[6px] border-b-0 border-x-transparent border-t-gray-900/95" style={{ transform: 'translateX(-50%)' }}></div>
+      </div>
+    );
+  };
+
+  // Function to handle mouse enter on position circle
+  const handlePositionHover = (position: string, players: Player[], event: React.MouseEvent) => {
+    console.log("Hovering over position:", position, "with", players.length, "players");
+    setHoveredPosition(position);
+    // Get position for the tooltip
+    const rect = event.currentTarget.getBoundingClientRect();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+    
+    // Position the tooltip above the circle including scroll offset
+    setTooltipPosition({
+      x: rect.left + rect.width / 2 + scrollLeft,
+      y: rect.top + scrollTop
+    });
+  };
+
+  // Function to handle mouse leave for position circle
+  const handlePositionLeave = () => {
+    setHoveredPosition(null);
+  };
+
   return (
     <div className="relative w-full h-[1210px] border border-gray-600 rounded-lg overflow-hidden">
       {/* Player count and toggle button container */}
@@ -164,6 +336,23 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
         style={{ backgroundImage: 'url(/pitch-bg.svg)' }}
       />
+      
+      {/* Tooltip display if player is hovered */}
+      {hoveredPlayer && (
+        <div className="fixed inset-0 z-40 pointer-events-none">
+          <PlayerTooltip player={hoveredPlayer} />
+        </div>
+      )}
+      
+      {/* Tooltip display if position is hovered */}
+      {hoveredPosition && (
+        <div className="fixed inset-0 z-40 pointer-events-none">
+          <PositionStatsTooltip 
+            position={hoveredPosition} 
+            players={positionPlayersMap[hoveredPosition] || []} 
+          />
+        </div>
+      )}
       
       {/* Position circles with player names in a single render pass */}
       {formationPlayers.map((item, index) => {
@@ -207,7 +396,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
             <div className="flex flex-col items-center">
               {/* Position circle */}
               <div
-                className={`w-11 h-11 rounded-full flex items-center justify-center ${colorScheme.bgPrimary} shadow-lg`}
+                className={`w-11 h-11 rounded-full flex items-center justify-center ${colorScheme.bgPrimary} shadow-lg cursor-pointer hover:ring-2 hover:ring-white/50`}
+                onMouseEnter={(e) => handlePositionHover(position, playersForPosition, e)}
+                onMouseLeave={handlePositionLeave}
               >
                 <span className={`text-xs font-bold ${colorScheme.text}`}>
                   {showPlayerCount ? playerCount : positionLabel}
@@ -218,7 +409,11 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
               <div className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg mt-2`}>
                 {mainPlayer ? (
                   <>
-                    <div className={`text-xs font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)}`}>
+                    <div 
+                      className={`text-xs font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)} cursor-pointer hover:underline`}
+                      onMouseEnter={(e) => handlePlayerHover(mainPlayer, e)}
+                      onMouseLeave={handlePlayerLeave}
+                    >
                       {mainPlayer.name}
                     </div>
                     <div className={`text-[10px] ${getTagColor(mainPlayer)}`}>
@@ -230,7 +425,11 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                       <div className="mt-1 pt-1 border-t border-gray-700">
                         {backupPlayersToShow.map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
-                            <div className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
+                            <div 
+                              className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
+                              onMouseEnter={(e) => handlePlayerHover(backupPlayer, e)}
+                              onMouseLeave={handlePlayerLeave}
+                            >
                               {backupPlayer.name}
                             </div>
                           </div>
@@ -256,7 +455,11 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                       <div className="mt-1 pt-1 border-t border-gray-700">
                         {backupPlayersToShow.map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
-                            <div className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90`}>
+                            <div 
+                              className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
+                              onMouseEnter={(e) => handlePlayerHover(backupPlayer, e)}
+                              onMouseLeave={handlePlayerLeave}
+                            >
                               {backupPlayer.name}
                             </div>
                           </div>
