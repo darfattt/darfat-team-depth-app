@@ -13,6 +13,7 @@ interface PlayerListProps {
     search: string;
     positionArray: string[];
     statusArray: string[];
+    minRating: number;
   }
   onFilterChange: (filters: {
     position: string;
@@ -20,6 +21,7 @@ interface PlayerListProps {
     search: string;
     positionArray: string[];
     statusArray: string[];
+    minRating: number;
   }) => void
 }
 
@@ -34,6 +36,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const [footFilters, setFootFilters] = useState<string[]>([])
   const [tagFilters, setTagFilters] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState<string[]>(filters.statusArray || [])
+  const [minRating, setMinRating] = useState<number>(filters.minRating || 0)
   
   const [sortField, setSortField] = useState<keyof Player>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -49,9 +52,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
       status: statusFilter.length === 1 ? statusFilter[0] : '',
       search: searchTerm,
       positionArray: positionFilters,
-      statusArray: statusFilter
+      statusArray: statusFilter,
+      minRating: minRating
     });
-  }, [positionFilters, statusFilter, searchTerm, onFilterChange]);
+  }, [positionFilters, statusFilter, searchTerm, minRating, onFilterChange]);
   
   // Update local state when props change
   useEffect(() => {
@@ -64,6 +68,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
     
     if (filters.statusArray && JSON.stringify(statusFilter) !== JSON.stringify(filters.statusArray)) {
       setStatusFilter(filters.statusArray);
+    }
+
+    if (filters.minRating !== undefined && filters.minRating !== minRating) {
+      setMinRating(filters.minRating);
     }
   }, [filters]);
 
@@ -177,6 +185,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
     setTagFilters([]);
     setStatusFilter([]);
     setSearchTerm('');
+    setMinRating(0);
   }
 
   const sortedPlayers = [...players].sort((a, b) => {
@@ -228,7 +237,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
                           playerStatus.includes(filterStatus)
                         );
     
-    return matchesSearch && matchesPosition && matchesFoot && matchesTag && matchesStatus;
+    // Rating filter
+    const matchesRating = (player.scoutRecommendation || 0) >= minRating;
+    
+    return matchesSearch && matchesPosition && matchesFoot && matchesTag && matchesStatus && matchesRating;
   })
 
   const positions = Array.from(new Set(players.map(p => p.position))).filter(Boolean).sort()
@@ -421,7 +433,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
           </div>
         </div>
 
-        <div>
+        <div className="mb-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium text-gray-700">Status</span>
             {statusFilter.length > 0 && (
@@ -449,10 +461,37 @@ const PlayerList: React.FC<PlayerListProps> = ({
             ))}
           </div>
         </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-medium text-gray-700">Minimum Rating</span>
+            {minRating > 0 && (
+              <button 
+                onClick={() => setMinRating(0)}
+                className="text-xs text-blue-600 hover:text-blue-800"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="0.5"
+              value={minRating}
+              onChange={(e) => setMinRating(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-sm text-gray-600 min-w-[3rem]">{minRating.toFixed(1)}</span>
+            <StarRating rating={minRating} size="sm" />
+          </div>
+        </div>
       </div>
 
       {/* Active tag, foot, and status filters display */}
-      {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0) && (
+      {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || minRating > 0) && (
         <div className="flex flex-wrap items-center gap-2">
           {searchTerm && (
             <span className="filter-badge filter-badge-search flex items-center">
@@ -489,8 +528,17 @@ const PlayerList: React.FC<PlayerListProps> = ({
               </button>
             </span>
           ))}
+
+          {minRating > 0 && (
+            <span className="filter-badge flex items-center bg-yellow-100 text-yellow-800">
+              Min Rating: {minRating.toFixed(1)}
+              <button onClick={() => setMinRating(0)} className="ml-1">
+                <XMarkIcon className="w-3 h-3" />
+              </button>
+            </span>
+          )}
           
-          {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0) && (
+          {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || minRating > 0) && (
             <button 
               onClick={clearFilters}
               className="text-sm text-red-600 hover:text-red-800 ml-2"
@@ -507,7 +555,16 @@ const PlayerList: React.FC<PlayerListProps> = ({
             {filteredPlayers.length} players found
           </span>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
+          <button
+            className="btn btn-blue flex items-center gap-2 hover:bg-blue-600 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            Import Excel
+          </button>
           <input
             type="file"
             accept=".xlsx, .xls"
@@ -516,16 +573,22 @@ const PlayerList: React.FC<PlayerListProps> = ({
             ref={fileInputRef}
           />
           <button
-            className="btn btn-blue"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Import Excel
-          </button>
-          <button
-            className="btn btn-green"
+            className="btn btn-green flex items-center gap-2 hover:bg-green-600 transition-colors"
             onClick={handleExcelDownload}
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
             Export Excel
+          </button>
+          <button
+            className="btn btn-yellow flex items-center gap-2 hover:bg-yellow-600 transition-colors"
+            onClick={handleDownloadSample}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+            </svg>
+            Sample Excel
           </button>
         </div>
       </div>
@@ -543,7 +606,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
               <SortableHeader field="domisili" label="Domisili" />
               <SortableHeader field="jurusan" label="Jurusan" />
               <SortableHeader field="age" label="Age" />
-              <SortableHeader field="experience" label="Exp" />
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -593,9 +655,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{player.age}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{player.experience} yrs</div>
                 </td>
               </tr>
             ))}

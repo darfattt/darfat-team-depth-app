@@ -21,6 +21,7 @@ export interface Filters {
   search: string;
   positionArray: string[];
   statusArray: string[];
+  minRating: number;
 }
 
 function App() {
@@ -31,12 +32,13 @@ function App() {
   const [activeTab, setActiveTab] = useState<'list' | 'formation'>('list')
   const [showInfo, setShowInfo] = useState(false)
   const [teamColor, setTeamColor] = useState<TeamColor>('green')
-  const [filters, setFilters] = useState<Filters>({
+  const [filters, setFilters] = useState({
     position: '',
     status: '',
     search: '',
-    positionArray: [],
-    statusArray: []
+    positionArray: [] as string[],
+    statusArray: [] as string[],
+    minRating: 0
   });
 
   useEffect(() => {
@@ -118,22 +120,16 @@ function App() {
     }
   }
 
-  const handleFilterChange = useCallback((newFilters: {
+  const handleFilterChange = (newFilters: {
     position: string;
     status: string;
     search: string;
-    positionArray?: string[];
-    statusArray?: string[];
+    positionArray: string[];
+    statusArray: string[];
+    minRating: number;
   }) => {
-    setFilters(prev => ({
-      ...prev,
-      position: newFilters.position,
-      status: newFilters.status,
-      search: newFilters.search,
-      positionArray: newFilters.positionArray || prev.positionArray,
-      statusArray: newFilters.statusArray || prev.statusArray
-    }));
-  }, []);
+    setFilters(newFilters);
+  };
 
   const applyToFormation = () => {
     setActiveTab('formation');
@@ -250,6 +246,7 @@ function App() {
                   players={players} 
                   filteredPlayers={formationPlayers} 
                   teamColor={teamColor} 
+                  filters={filters}
                 />
                 <div className="text-sm text-gray-500 italic text-center mt-2">
                   Note: Players are assigned to positions based on their listed position, experience, and age

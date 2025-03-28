@@ -9,6 +9,14 @@ type FormationDisplayProps = {
   filteredPlayers?: Player[];
   formation?: string;
   teamColor?: string;
+  filters: {
+    position: string;
+    status: string;
+    search: string;
+    positionArray: string[];
+    statusArray: string[];
+    minRating: number;
+  };
 };
 
 type ColorScheme = {
@@ -23,7 +31,8 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   players,
   filteredPlayers,
   formation = "4-2-3-1",
-  teamColor = "blue"
+  teamColor = "blue",
+  filters
 }) => {
   // Add state for the display toggle
   const [showPlayerCount, setShowPlayerCount] = useState(false);
@@ -47,7 +56,38 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     ? players 
     : filteredPlayers;
   
-  const { formationPlayers, positionPlayersMap } = useFormationData(displayPlayers, formation);
+  // Helper function to ensure field is always an array
+  const ensureArrayField = (field: any): string[] => {
+    if (!field) return [];
+    if (Array.isArray(field)) return field;
+    if (typeof field === 'string') {
+      return field.split(',').map(item => item.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  // Filter players based on all filters
+  const filteredPlayersForFormation = players.filter(player => {
+    const matchesSearch = filters.search === '' || 
+                         player.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+                         (player.domisili?.toLowerCase().includes(filters.search.toLowerCase())) ||
+                         (player.jurusan?.toLowerCase().includes(filters.search.toLowerCase()));
+    
+    const matchesPosition = filters.positionArray.length === 0 || 
+                           filters.positionArray.includes(player.position);
+    
+    const playerStatus = ensureArrayField(player.status);
+    const matchesStatus = filters.statusArray.length === 0 || 
+                        filters.statusArray.some(filterStatus => 
+                          playerStatus.includes(filterStatus)
+                        );
+
+    const matchesRating = (player.scoutRecommendation || 0) >= filters.minRating;
+    
+    return matchesSearch && matchesPosition && matchesStatus && matchesRating;
+  });
+
+  const { formationPlayers, positionPlayersMap } = useFormationData(filteredPlayersForFormation, formation);
 
   // Calculate total number of players in the formation
   const totalPlayersInFormation = Object.values(positionPlayersMap).reduce(
