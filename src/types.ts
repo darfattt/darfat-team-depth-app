@@ -11,6 +11,7 @@ export interface Player {
   foot: string;
   tags: string[];
   status: string;
+  scoutRecommendation?: number;  // Rating from 0-5, can include decimals like 3.5
 }
 
 export interface Team {

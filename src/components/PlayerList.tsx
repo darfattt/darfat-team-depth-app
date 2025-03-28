@@ -3,6 +3,7 @@ import { Player } from '../types'
 import * as XLSX from 'xlsx'
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { generateSampleExcelFile, parseExcelData, generateExcelFile } from '../utils/excelGenerator'
+import StarRating from './StarRating'
 
 interface PlayerListProps {
   players: Player[]
@@ -530,53 +531,71 @@ const PlayerList: React.FC<PlayerListProps> = ({
       </div>
       
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
           <thead className="bg-gray-50">
             <tr>
               <SortableHeader field="name" label="Name" />
               <SortableHeader field="position" label="Position" />
-              <SortableHeader field="age" label="Age" />
-              <SortableHeader field="experience" label="Experience" />
+              <SortableHeader field="status" label="Status" />
+              <SortableHeader field="tags" label="Tags" />
+              <SortableHeader field="scoutRecommendation" label="Scout Rating" />
+              <SortableHeader field="foot" label="Foot" />
               <SortableHeader field="domisili" label="Domisili" />
               <SortableHeader field="jurusan" label="Jurusan" />
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foot</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <SortableHeader field="age" label="Age" />
+              <SortableHeader field="experience" label="Exp" />
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredPlayers.map((player) => (
               <tr key={player.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{player.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.position}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.age}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.experience} years</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.domisili}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.jurusan}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{player.foot}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="font-medium text-gray-900">{player.name}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{player.position}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex flex-wrap gap-1">
+                    {ensureArrayField(player.status).map((status, index) => (
+                      <span
+                        key={`${player.id}-status-${index}`}
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(status)}`}
+                      >
+                        {status}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex flex-wrap gap-1 max-w-[150px]">
                     {ensureArrayField(player.tags).map((tag, index) => (
-                      <span 
-                        key={index} 
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      <span
+                        key={`${player.id}-tag-${index}`}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800"
                       >
                         {tag}
                       </span>
                     ))}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  <div className="flex flex-wrap gap-1">
-                    {ensureArrayField(player.status).map((status, index) => (
-                      <span 
-                        key={index} 
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}
-                      >
-                        {status}
-                      </span>
-                    ))}
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <StarRating rating={player.scoutRecommendation || 0} size="sm" />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{player.foot}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{player.domisili}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{player.jurusan}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{player.age}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{player.experience} yrs</div>
                 </td>
               </tr>
             ))}

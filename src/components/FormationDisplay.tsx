@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useFormationData } from '../hooks/useFormationData';
 import { getPositionLabel, FormationPlayer } from '../hooks/useFormationData';
 import { Player } from '../types';
+import StarRating from './StarRating';
 
 type FormationDisplayProps = {
   players: Player[];
@@ -36,6 +37,8 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   // State to track which position is being hovered for position stats
   const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
+  // State for showing/hiding scout ratings
+  const [showRatings, setShowRatings] = useState(true);
   
   console.log('All players:', players.length);
   console.log('Filtered players:', filteredPlayers?.length);
@@ -177,6 +180,12 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
           {player.experience !== undefined && (
             <div className="text-gray-300 text-xs">
               <span className="font-medium">Experience:</span> {player.experience} years
+            </div>
+          )}
+          {player.scoutRecommendation !== undefined && (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-gray-300 text-xs font-medium">Rating:</span>
+              <StarRating rating={player.scoutRecommendation} size="sm" />
             </div>
           )}
           {player.tags && player.tags.length > 0 && (
@@ -634,6 +643,14 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
           >
             {showTeamStats ? "Hide Team Stats" : "Show Team Stats"}
           </button>
+          
+          {/* Toggle button for scout ratings */}
+          <button 
+            onClick={() => setShowRatings(prev => !prev)}
+            className={`px-3 py-1 text-xs rounded-md ${showRatings ? colorScheme.bgSecondary : colorScheme.bgPrimary} ${colorScheme.text} hover:opacity-90 transition-opacity shadow-md`}
+          >
+            {showRatings ? "Hide Ratings" : "Show Ratings"}
+          </button>
         </div>
       </div>
       
@@ -724,6 +741,11 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     <div className={`text-[10px] ${getTagColor(mainPlayer)}`}>
                       {mainPlayer.tags?.[0] || mainPlayer.experience + ' yrs'}
                     </div>
+                    {showRatings && mainPlayer.scoutRecommendation !== undefined && (
+                      <div className="flex justify-center mt-1">
+                        <StarRating rating={mainPlayer.scoutRecommendation} size="sm" />
+                      </div>
+                    )}
                     
                     {/* Backup players */}
                     {backupPlayersToShow.length > 0 && (
@@ -737,6 +759,11 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                             >
                               {backupPlayer.name}
                             </div>
+                            {showRatings && backupPlayer.scoutRecommendation !== undefined && (
+                              <div className="flex justify-center mt-0.5">
+                                <StarRating rating={backupPlayer.scoutRecommendation} size="sm" />
+                              </div>
+                            )}
                           </div>
                         ))}
                         
@@ -767,6 +794,11 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                             >
                               {backupPlayer.name}
                             </div>
+                            {showRatings && backupPlayer.scoutRecommendation !== undefined && (
+                              <div className="flex justify-center mt-0.5">
+                                <StarRating rating={backupPlayer.scoutRecommendation} size="sm" />
+                              </div>
+                            )}
                           </div>
                         ))}
                         

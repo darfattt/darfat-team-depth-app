@@ -11,7 +11,8 @@
     "jurusan": "Business Administration",
     "foot": "left",
     "tags": ["Playmaker", "Dribbler", "Finisher"],
-    "status": ["HG", "Player To Watch"]
+    "status": ["HG", "Player To Watch"],
+    "scoutRecommendation": 5
   },
   {
     "id": "p002",
@@ -25,7 +26,8 @@
     "jurusan": "Sports Science",
     "foot": "right",
     "tags": ["Goalscorer", "Aerial", "Free-kick"],
-    "status": ["Player To Watch"]
+    "status": ["Player To Watch"],
+    "scoutRecommendation": 4.8
   },
   {
     "id": "p003",
@@ -39,7 +41,8 @@
     "jurusan": "Economics",
     "foot": "right",
     "tags": ["Speed", "Finisher", "Dribbler"],
-    "status": ["Player To Watch"]
+    "status": ["Player To Watch"],
+    "scoutRecommendation": 4.5
   },
   {
     "id": "p004",
@@ -53,7 +56,8 @@
     "jurusan": "Sports Management",
     "foot": "left",
     "tags": ["Finisher", "Physical", "Positioning"],
-    "status": ["Player To Watch", "HG"]
+    "status": ["Player To Watch", "HG"],
+    "scoutRecommendation": 4.7
   },
   {
     "id": "p005",
@@ -67,7 +71,8 @@
     "jurusan": "Physical Education",
     "foot": "right",
     "tags": ["Playmaker", "Passer", "Vision"],
-    "status": ["HG"]
+    "status": ["HG"],
+    "scoutRecommendation": 4.9
   },
   {
     "id": "p006",
@@ -81,7 +86,8 @@
     "jurusan": "Sports Psychology",
     "foot": "right",
     "tags": ["Leader", "Aerial", "Defender"],
-    "status": ["Unknown"]
+    "status": ["Unknown"],
+    "scoutRecommendation": 4.6
   },
   {
     "id": "p007",
@@ -95,7 +101,8 @@
     "jurusan": "Marketing",
     "foot": "right",
     "tags": ["Dribbler", "Skillful", "Playmaker"],
-    "status": ["Player To Watch"]
+    "status": ["Player To Watch"],
+    "scoutRecommendation": 4.3
   },
   {
     "id": "p008",
@@ -109,7 +116,8 @@
     "jurusan": "Business",
     "foot": "left",
     "tags": ["Finisher", "Speed", "Goalscorer"],
-    "status": ["HG"]
+    "status": ["HG"],
+    "scoutRecommendation": 4.5
   },
   {
     "id": "p009",
@@ -123,7 +131,8 @@
     "jurusan": "Engineering",
     "foot": "right",
     "tags": ["Sweeper", "Leader", "Shot-stopper"],
-    "status": ["Unknown"]
+    "status": ["Unknown"],
+    "scoutRecommendation": 4.0
   },
   {
     "id": "p010",
@@ -137,7 +146,8 @@
     "jurusan": "Physical Education",
     "foot": "right",
     "tags": ["Finisher", "Positioning", "Aerial"],
-    "status": ["Player To Watch"]
+    "status": ["Player To Watch"],
+    "scoutRecommendation": 4.2
   },
   {
     "id": "p011",
@@ -151,7 +161,8 @@
     "jurusan": "Economics",
     "foot": "both",
     "tags": ["Playmaker", "Passer", "Vision"],
-    "status": ["Unknown"]
+    "status": ["Unknown"],
+    "scoutRecommendation": 4.1
   },
   {
     "id": "p012",
@@ -165,7 +176,8 @@
     "jurusan": "Mathematics",
     "foot": "right",
     "tags": ["Tackler", "Interceptor", "Engine"],
-    "status": ["HG"]
+    "status": ["HG"],
+    "scoutRecommendation": 4.4
   },
   {
     "id": "p013",
@@ -179,7 +191,8 @@
     "jurusan": "Engineering",
     "foot": "right",
     "tags": ["Versatile", "Passer", "Defender"],
-    "status": ["HG", "Player To Watch"]
+    "status": ["HG", "Player To Watch"],
+    "scoutRecommendation": 4.3
   },
   {
     "id": "p014",
@@ -193,7 +206,8 @@
     "jurusan": "Computer Science",
     "foot": "right",
     "tags": ["Crosser", "Passer", "Set-piece"],
-    "status": ["HG"]
+    "status": ["HG"],
+    "scoutRecommendation": 4.0
   },
   {
     "id": "p015",
@@ -207,7 +221,8 @@
     "jurusan": "Business",
     "foot": "both",
     "tags": ["Box-to-box", "Technique", "Vision"],
-    "status": ["Unknown"]
+    "status": ["Unknown"],
+    "scoutRecommendation": 4.8
   },
   {
     "id": "p016",
@@ -221,7 +236,8 @@
     "jurusan": "Engineering",
     "foot": "right",
     "tags": ["Controller", "Passer", "Defensive"],
-    "status": ["Player To Watch"]
+    "status": ["Player To Watch"],
+    "scoutRecommendation": 4.5
   },
   {
     "id": "p017",
@@ -235,7 +251,8 @@
     "jurusan": "Communications",
     "foot": "right",
     "tags": ["Speed", "Dribbler", "Skillful"],
-    "status": ["HG", "Player To Watch"]
+    "status": ["HG", "Player To Watch"],
+    "scoutRecommendation": 4.7
   },
   {
     "id": "p018",
@@ -248,8 +265,9 @@
     "domisili": "Manchester",
     "jurusan": "Sports Science",
     "foot": "left",
-    "tags": ["Technical", "Dribbler", "Creative"],
-    "status": ["HG"]
+    "tags": ["Technique", "Creative", "Dribbler"],
+    "status": ["HG"],
+    "scoutRecommendation": 4.6
   },
   {
     "id": "p019",
@@ -263,7 +281,8 @@
     "jurusan": "Physical Education",
     "foot": "right",
     "tags": ["Shot-stopper", "Distribution", "Reflexes"],
-    "status": ["HG"]
+    "status": ["HG"],
+    "scoutRecommendation": 4.7
   },
   {
     "id": "p020",
@@ -277,6 +296,7 @@
     "jurusan": "Economics",
     "foot": "right",
     "tags": ["Engine", "Box-to-box", "Versatile"],
-    "status": ["Player To Watch"]
+    "status": ["Player To Watch"],
+    "scoutRecommendation": 4.8
   }
 ] 
