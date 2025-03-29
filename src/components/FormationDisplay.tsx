@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useFormationData } from '../hooks/useFormationData';
-import { getPositionLabel, FormationPlayer } from '../hooks/useFormationData';
+import { getPositionLabel } from '../hooks/useFormationData';
 import { Player } from '../types';
 import StarRating from './StarRating';
 

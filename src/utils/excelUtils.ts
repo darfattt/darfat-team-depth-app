@@ -1,3 +1,8 @@
+import { Player } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+
 interface ExcelColumn {
   key: keyof Player;
   header: string;
@@ -46,7 +51,7 @@ export const exportPlayersToExcel = (players: Player[]): void => {
     fgColor: { argb: 'FFE0E0E0' }
   };
 
-  workbook.xlsx.writeBuffer().then(buffer => {
+  workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, 'players.xlsx');
   });
@@ -58,12 +63,17 @@ export const importPlayersFromExcel = async (file: File): Promise<Player[]> => {
   await workbook.xlsx.load(arrayBuffer);
 
   const worksheet = workbook.getWorksheet(1);
+  if (!worksheet) {
+    console.error('No worksheet found in Excel file');
+    return [];
+  }
+
   const players: Player[] = [];
 
   const headers = worksheet.getRow(1).values as string[];
   const headerMap = new Map(headers.map((header, index) => [header, index + 1]));
 
-  worksheet.eachRow((row, rowNumber) => {
+  worksheet.eachRow((row: ExcelJS.Row, rowNumber: number) => {
     if (rowNumber === 1) return;
 
     const player: Partial<Player> = {
@@ -77,7 +87,7 @@ export const importPlayersFromExcel = async (file: File): Promise<Player[]> => {
         switch (col.key) {
           case 'tags':
           case 'status':
-            player[col.key] = String(cellValue).split(',').map(s => s.trim());
+            player[col.key] = String(cellValue).split(',').map(s => s.trim()) as any;
             break;
           case 'scoutRecommendation':
             player[col.key] = Number(cellValue) || 0;
@@ -159,7 +169,7 @@ export const downloadSampleExcel = (): void => {
   worksheet.addRow(['- Decimal values are allowed (e.g., 3.5, 4.5)']);
   worksheet.addRow(['- Tags and Status can be comma-separated for multiple values']);
 
-  workbook.xlsx.writeBuffer().then(buffer => {
+  workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, 'sample-players-template.xlsx');
   });

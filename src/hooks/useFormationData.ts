@@ -106,8 +106,11 @@ const getPlayersForPosition = (players: Player[], position: string): Player[] =>
       if (!aExactMatch && bExactMatch) return 1;
       
       // Then sort by scout recommendation
-      if (b.scoutRecommendation !== a.scoutRecommendation) {
-        return b.scoutRecommendation - a.scoutRecommendation;
+      const aRating = a.scoutRecommendation ?? 0;
+      const bRating = b.scoutRecommendation ?? 0;
+      
+      if (bRating !== aRating) {
+        return bRating - aRating;
       }
       // Then sort by experience
       if (b.experience !== a.experience) {

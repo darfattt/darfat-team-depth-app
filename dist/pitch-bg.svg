@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1100" width="100%" height="100%">
+  <!-- Define grass pattern -->
+  <defs>
+    <pattern id="grass-pattern" patternUnits="userSpaceOnUse" width="30" height="30" patternTransform="rotate(90)">
+      <line x1="0" y1="0" x2="0" y2="30" stroke="#222222" stroke-width="1.5" stroke-opacity="0.3" />
+    </pattern>
+    
+    <!-- Field texture - horizontal lines (subtle pattern) -->
+    <pattern id="grass-texture" patternUnits="userSpaceOnUse" width="100" height="100">
+      <rect width="100" height="100" fill="#000000" />
+      <rect width="100" height="33" fill="#050505" fill-opacity="0.7" />
+      <rect y="33" width="100" height="34" fill="#0a0a0a" fill-opacity="0.85" />
+      <rect y="67" width="100" height="33" fill="#050505" fill-opacity="0.7" />
+    </pattern>
+  </defs>
+  
+  <!-- Main field background with full height -->
+  <rect width="800" height="1100" fill="url(#grass-texture)" />
+  <rect width="800" height="1100" fill="url(#grass-pattern)" />
+  
+  <!-- Field boundaries - Adjusted to ensure visibility of top area -->
+  <rect x="70" y="50" width="660" height="1000" stroke="#ff6600" stroke-width="4" fill="none" />
+  
+  <!-- Horizontal center line -->
+  <line x1="70" y1="550" x2="730" y2="550" stroke="#ff6600" stroke-width="4" />
+  
+  <!-- Center circle -->
+  <circle cx="400" cy="550" r="91.5" stroke="#ff6600" stroke-width="4" fill="none" />
+  <circle cx="400" cy="550" r="5" fill="#ff6600" />
+  
+  <!-- Goal areas (smaller box) - Adjusted to ensure visibility -->
+  <rect x="300" y="150" width="200" height="90" stroke="#ff6600" stroke-width="5" fill="none" />
+  <rect x="300" y="860" width="200" height="90" stroke="#ff6600" stroke-width="5" fill="none" />
+  
+  <!-- Penalty areas (larger box) - Adjusted -->
+  <rect x="200" y="150" width="400" height="150" stroke="#ff6600" stroke-width="4" fill="none" />
+  <rect x="200" y="800" width="400" height="150" stroke="#ff6600" stroke-width="4" fill="none" />
+  
+  <!-- Penalty spots -->
+  <circle cx="400" cy="275" r="5" fill="#ff6600" />
+  <circle cx="400" cy="825" r="5" fill="#ff6600" />
+  
+  <!-- Corner arcs - More visible and properly positioned -->
+  <path d="M 70 70 A 20 20 0 0 1 90 50" stroke="#ff6600" stroke-width="6" fill="none" />
+  <path d="M 710 50 A 20 20 0 0 1 730 70" stroke="#ff6600" stroke-width="6" fill="none" />
+  <path d="M 70 1030 A 20 20 0 0 0 90 1050" stroke="#ff6600" stroke-width="6" fill="none" />
+  <path d="M 710 1050 A 20 20 0 0 0 730 1030" stroke="#ff6600" stroke-width="6" fill="none" />
+  
+  <!-- Goal lines emphasized - To match reference -->
+  <line x1="300" y1="50" x2="500" y2="50" stroke="#ff6600" stroke-width="6" />
+  <line x1="300" y1="1050" x2="500" y2="1050" stroke="#ff6600" stroke-width="6" />
+  
+  <!-- Extra markings for additional visibility -->
+  <!-- Top and bottom goal lines -->
+  <line x1="70" y1="50" x2="300" y2="50" stroke="#ff6600" stroke-width="4" />
+  <line x1="500" y1="50" x2="730" y2="50" stroke="#ff6600" stroke-width="4" />
+  <line x1="70" y1="1050" x2="300" y2="1050" stroke="#ff6600" stroke-width="4" />
+  <line x1="500" y1="1050" x2="730" y2="1050" stroke="#ff6600" stroke-width="4" />
+  
+  <!-- Side lines emphasized -->
+  <line x1="70" y1="50" x2="70" y2="1050" stroke="#ff6600" stroke-width="4" />
+  <line x1="730" y1="50" x2="730" y2="1050" stroke="#ff6600" stroke-width="4" />
+</svg> 

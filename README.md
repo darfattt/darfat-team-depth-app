@@ -76,16 +76,57 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
-## Usage
+## Building for Production
 
-- The app comes pre-loaded with sample player data
-- Use the search box to find specific players
-- Use the filters to narrow down the player list
-- Click on column headers to sort the data
-- Click "Show Formation" to see the 4-2-3-1 formation display
-- Hover over players in the formation to see more details
-- Upload custom Excel files using the "Upload Excel File" button
-- Download a sample Excel template using the "Download Sample" button
+To build the application for production, run:
+
+```
+npm run build
+```
+
+This will create a `dist` directory with the production-ready files.
+
+## Deploying to Vercel
+
+### Method 1: Using Vercel CLI
+
+1. Install Vercel CLI globally (if not already installed)
+   ```
+   npm install --global vercel
+   ```
+
+2. Login to Vercel
+   ```
+   vercel login
+   ```
+
+3. Deploy to Vercel
+   ```
+   npm run deploy
+   ```
+   or
+   ```
+   vercel --prod
+   ```
+
+### Method 2: Using the Vercel Dashboard
+
+1. Push your code to a Git repository (GitHub, GitLab, or Bitbucket)
+
+2. Go to [Vercel](https://vercel.com) and sign in
+
+3. Click "New Project" and import your repository
+
+4. Configure the project settings:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+
+5. Click "Deploy"
+
+## Environment Variables
+
+No environment variables are required for this application.
 
 ## Technologies Used
 

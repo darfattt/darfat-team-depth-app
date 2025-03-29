@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Player } from '../types'
 import * as XLSX from 'xlsx'
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { generateSampleExcelFile, parseExcelData, generateExcelFile } from '../utils/excelGenerator'
+import { parseExcelData, generateExcelFile } from '../utils/excelGenerator'
 import StarRating from './StarRating'
 
 interface PlayerListProps {
@@ -40,7 +40,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
   
   const [sortField, setSortField] = useState<keyof Player>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
@@ -112,7 +111,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
     const file = event.target.files?.[0]
     if (!file) return
 
-    setIsLoading(true)
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
@@ -125,10 +123,8 @@ const PlayerList: React.FC<PlayerListProps> = ({
         const parsedPlayers = parseExcelData(excelData)
         // Replace setPlayers with a local variable since we don't need to update parent players
         console.log('Parsed players from Excel:', parsedPlayers.length)
-        setIsLoading(false)
       } catch (error) {
         console.error('Error parsing Excel file:', error)
-        setIsLoading(false)
         alert('Error parsing Excel file. Please check the format.')
       }
     }
@@ -142,15 +138,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
 
   const handleExcelDownload = () => {
     generateExcelFile(players)
-  }
-
-  const handleDownloadSample = async () => {
-    try {
-      await generateSampleExcelFile()
-    } catch (error) {
-      console.error('Failed to download sample file:', error)
-      alert('Failed to download sample file. Please try again.')
-    }
   }
 
   // Toggle filter selection
@@ -307,9 +294,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
         return 'bg-blue-500 text-white';
     }
   };
-
-  // Check if any filters are active
-  const hasActiveFilters = positionFilters.length > 0 || statusFilter.length > 0 || searchTerm !== '';
 
   // Handle click outside to close dropdowns
   useEffect(() => {
@@ -594,15 +578,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
             </svg>
             Export Excel
           </button>
-          {/* <button
-            className="btn btn-yellow flex items-center gap-2 hover:bg-yellow-600 transition-colors"
-            onClick={handleDownloadSample}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-            </svg>
-            Sample Excel
-          </button> */}
         </div>
       </div>
       

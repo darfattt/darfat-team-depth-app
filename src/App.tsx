@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import PlayerList from './components/PlayerList'
 import FormationDisplay from './components/FormationDisplay'
 import { Player } from './types'
 import { loadSamplePlayers } from './utils/sampleData'
 import { 
-  ViewColumnsIcon, 
-  UserGroupIcon, 
-  InformationCircleIcon,
   SwatchIcon
 } from '@heroicons/react/24/outline'
 
@@ -30,7 +27,6 @@ function App() {
   const [formationPlayers, setFormationPlayers] = useState<Player[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'list' | 'formation'>('list')
-  const [showInfo, setShowInfo] = useState(false)
   const [teamColor, setTeamColor] = useState<TeamColor>('green')
   const [filters, setFilters] = useState({
     position: '',
@@ -88,36 +84,10 @@ function App() {
     setFormationPlayers(result.length > 0 ? result : players);
   }, [players, filters]);
 
-  const handlePlayersUpdate = (newPlayers: Player[]) => {
-    setPlayers(newPlayers)
-  }
-
-  const toggleView = () => {
-    setActiveTab(activeTab === 'list' ? 'formation' : 'list')
-    // No longer need a separate call to update formation players
-    // as it's already updated whenever filters change
-  }
-
-  const toggleInfo = () => {
-    setShowInfo(!showInfo)
-  }
-
   const cycleTeamColor = () => {
     const currentIndex = teamColors.indexOf(teamColor);
     const nextIndex = (currentIndex + 1) % teamColors.length;
     setTeamColor(teamColors[nextIndex]);
-  }
-
-  // Get color class based on team color
-  const getColorButtonClass = () => {
-    switch(teamColor) {
-      case 'red': return 'bg-red-600 hover:bg-red-700';
-      case 'blue': return 'bg-blue-600 hover:bg-blue-700';
-      case 'yellow': return 'bg-amber-600 hover:bg-amber-700';
-      case 'gray': return 'bg-gray-600 hover:bg-gray-700';
-      case 'green': 
-      default: return 'bg-green-600 hover:bg-green-700';
-    }
   }
 
   const handleFilterChange = (newFilters: {
@@ -129,10 +99,6 @@ function App() {
     minRating: number;
   }) => {
     setFilters(newFilters);
-  };
-
-  const applyToFormation = () => {
-    setActiveTab('formation');
   };
 
   return (
