@@ -249,7 +249,7 @@ function App() {
                   filters={filters}
                 />
                 <div className="text-sm text-gray-500 italic text-center mt-2">
-                  Note: Players are assigned to positions based on their listed position, experience, and age
+                  Note: Players are assigned to positions based on their listed position, scout recommendation, and age
                 </div>
               </div>
             )}

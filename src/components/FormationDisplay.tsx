@@ -47,7 +47,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   // State to track which position is being hovered for position stats
   const [hoveredPosition, setHoveredPosition] = useState<string | null>(null);
   // State for showing/hiding scout ratings
-  const [showRatings, setShowRatings] = useState(true);
+  const [showRatings, setShowRatings] = useState(false);
   
   console.log('All players:', players.length);
   console.log('Filtered players:', filteredPlayers?.length);
@@ -358,7 +358,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-white text-xs">Average:</span>
               <div className="flex items-center gap-1.5">
-                <StarRating rating={averageRating} size="xs" />
+                <StarRating rating={averageRating} size="sm" />
                 <span className="text-white font-medium text-xs">({averageRating})</span>
               </div>
             </div>
@@ -371,7 +371,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
               ].map(({ label, range, count, stars }) => count > 0 && (
                 <div key={label} className="flex justify-between text-xs items-center">
                   <div className="flex items-center gap-1.5">
-                    <StarRating rating={stars} size="xs" />
+                    <StarRating rating={stars} size="sm" />
                     <span className="text-gray-300">
                       {label} ({range})
                     </span>
@@ -597,7 +597,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                 <span className="text-gray-300">Scout Rating:</span>
                 <div className="flex items-center gap-1">
                   <span className="text-white font-medium">{stats.averageScoutRating}</span>
-                  <StarRating rating={stats.averageScoutRating} size="xs" />
+                  <StarRating rating={stats.averageScoutRating} size="sm" />
                 </div>
               </div>
             </div>
@@ -956,7 +956,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
               </div>
 
               {/* Average Rating Display - Stars only */}
-              {showRatings && averageRating > 0 && (
+              {(
                 <div className="mt-1 mb-1 flex justify-center">
                   <StarRating rating={averageRating} size="sm" />
                 </div>
@@ -985,7 +985,8 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     {/* Backup players */}
                     {playersForPosition.length > 1 && (
                       <div className="mt-1 pt-1 border-t border-gray-700">
-                        {playersForPosition.slice(1).map((backupPlayer: Player) => (
+                        {/* Show up to 3 backup players */}
+                        {playersForPosition.slice(1, 4).map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
                             <div 
                               className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
@@ -1001,6 +1002,13 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                             )}
                           </div>
                         ))}
+                        
+                        {/* Show message if there are more than 4 players total */}
+                        {playersForPosition.length > 4 && (
+                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
+                            +{playersForPosition.length - 4} more player{playersForPosition.length - 4 > 1 ? 's' : ''}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -1011,9 +1019,10 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     </div>
                     
                     {/* Show backup players even when there's no main player */}
-                    {playersForPosition.length > 1 && (
+                    {playersForPosition.length > 0 && (
                       <div className="mt-1 pt-1 border-t border-gray-700">
-                        {playersForPosition.slice(1).map((backupPlayer: Player) => (
+                        {/* Show up to 4 players when there's no main player */}
+                        {playersForPosition.slice(0, 4).map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
                             <div 
                               className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
@@ -1029,6 +1038,13 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                             )}
                           </div>
                         ))}
+                        
+                        {/* Show message if there are more than 4 players */}
+                        {playersForPosition.length > 4 && (
+                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
+                            +{playersForPosition.length - 4} more player{playersForPosition.length - 4 > 1 ? 's' : ''}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>

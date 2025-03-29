@@ -5,7 +5,7 @@ import { Player } from '../types';
  */
 export const loadSamplePlayers = async (): Promise<Player[]> => {
   try {
-    const response = await fetch('/sample-players.json');
+    const response = await fetch('/sample-players-expose.json');
     if (!response.ok) {
       throw new Error(`Failed to load sample data: ${response.status} ${response.statusText}`);
     }

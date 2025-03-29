@@ -46,7 +46,7 @@ const positionMapping = {
 // Updated coordinates to match the 800x1100 pitch dimensions
 const formation4231: FormationPositions = {
   // Striker at the top (attacking end)
-  ST: { top: '18%', left: '50%' },
+  ST: { top: '16%', left: '50%' },
   
   // Attacking Midfielders
   LM: { top: '40%', left: '20%' },
@@ -64,7 +64,7 @@ const formation4231: FormationPositions = {
   RB: { top: '80%', left: '85%' },
   
   // Goalkeeper at the bottom (defensive end)
-  GK: { top: '92%', left: '50%' }
+  GK: { top: '90%', left: '50%' }
 };
 
 // Function to find players for a specific position

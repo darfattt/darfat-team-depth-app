@@ -44,24 +44,14 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
-  // Update parent component's filters when local filters change
-  useEffect(() => {
-    // Pass both string format and array format to parent
-    onFilterChange({
-      position: positionFilters.length === 1 ? positionFilters[0] : '',
-      status: statusFilter.length === 1 ? statusFilter[0] : '',
-      search: searchTerm,
-      positionArray: positionFilters,
-      statusArray: statusFilter,
-      minRating: minRating
-    });
-  }, [positionFilters, statusFilter, searchTerm, minRating, onFilterChange]);
-  
   // Update local state when props change
   useEffect(() => {
-    setSearchTerm(filters.search || '');
+    // Only update if values are different to avoid loops
+    if (filters.search !== searchTerm) {
+      setSearchTerm(filters.search || '');
+    }
     
-    // Use array filters directly from props
+    // Use array filters directly from props, but only if they're actually different
     if (filters.positionArray && JSON.stringify(positionFilters) !== JSON.stringify(filters.positionArray)) {
       setPositionFilters(filters.positionArray);
     }
@@ -73,8 +63,31 @@ const PlayerList: React.FC<PlayerListProps> = ({
     if (filters.minRating !== undefined && filters.minRating !== minRating) {
       setMinRating(filters.minRating);
     }
-  }, [filters]);
+  }, [filters, searchTerm, positionFilters, statusFilter, minRating]);
 
+  // Update parent component's filters when local filters change
+  useEffect(() => {
+    // Add a ref to track if this is a filter change from local state vs. from parent
+    const updatedFilters = {
+      position: positionFilters.length === 1 ? positionFilters[0] : '',
+      status: statusFilter.length === 1 ? statusFilter[0] : '',
+      search: searchTerm,
+      positionArray: positionFilters,
+      statusArray: statusFilter,
+      minRating: minRating
+    };
+    
+    // Check if the filters are actually different before updating
+    if (
+      updatedFilters.search !== filters.search ||
+      JSON.stringify(updatedFilters.positionArray) !== JSON.stringify(filters.positionArray) ||
+      JSON.stringify(updatedFilters.statusArray) !== JSON.stringify(filters.statusArray) ||
+      updatedFilters.minRating !== filters.minRating
+    ) {
+      onFilterChange(updatedFilters);
+    }
+  }, [positionFilters, statusFilter, searchTerm, minRating, filters, onFilterChange]);
+  
   // Helper function to ensure tags/status is always an array
   const ensureArrayField = (field: any): string[] => {
     if (!field) return [];
