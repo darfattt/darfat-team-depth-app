@@ -84,7 +84,7 @@
     "experience": 14,
     "domisili": "Liverpool",
     "jurusan": "Sports Psychology",
-    "foot": "right",
+    "foot": "both",
     "tags": ["Leader", "Aerial", "Defender"],
     "status": ["Unknown"],
     "scoutRecommendation": 4.6
@@ -298,5 +298,20 @@
     "tags": ["Engine", "Box-to-box", "Versatile"],
     "status": ["Player To Watch"],
     "scoutRecommendation": 4.8
+  },
+  {
+    "id": "p021",
+    "name": "Rizki Ridho",
+    "position": "CB",
+    "age": 23,
+    "height": "181",
+    "weight": 74,
+    "experience": 1,
+    "domisili": "Jakarta",
+    "jurusan": "Sports Psychology",
+    "foot": "right",
+    "tags": ["Wonderkid", "Composure", "Defender"],
+    "status": ["Unknown"],
+    "scoutRecommendation": 2.5
   }
 ] 

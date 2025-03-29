@@ -141,7 +141,7 @@ function App() {
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <svg 
-              className="w-8 h-8 text-green-500" 
+              className="w-8 h-8 text-[#ff6600]" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24" 
