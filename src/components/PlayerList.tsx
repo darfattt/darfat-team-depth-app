@@ -379,7 +379,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
 
   const SortableHeader = ({ field, label }: { field: keyof Player, label: string }) => (
     <th 
-      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+      className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
       onClick={() => handleSort(field)}
     >
       <div className="flex items-center">
@@ -711,74 +711,98 @@ const PlayerList: React.FC<PlayerListProps> = ({
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
-          <thead className="bg-gray-50">
-            <tr>
-              <SortableHeader field="name" label="Name" />
-              <SortableHeader field="position" label="Position" />
-              <SortableHeader field="status" label="Status" />
-              <SortableHeader field="tags" label="Tags" />
-              <SortableHeader field="scoutRecommendation" label="Scout Rating" />
-              <SortableHeader field="foot" label="Foot" />
-              <SortableHeader field="domisili" label="Domisili" />
-              <SortableHeader field="jurusan" label="Jurusan" />
-              <SortableHeader field="age" label="Age" />
+      <table className="w-full divide-y divide-gray-200 border-separate border-spacing-0 table-fixed">
+        <thead className="bg-gray-50">
+          <tr>
+            <SortableHeader field="name" label="Name" />
+            <SortableHeader field="position" label="POS" />
+            <SortableHeader field="foot" label="Foot" />
+            <SortableHeader field="jurusan" label="Jurusan" />
+            <SortableHeader field="domisili" label="Domisili" />
+            <SortableHeader field="status" label="Status" />
+            <SortableHeader field="tags" label="Tags" />
+            <SortableHeader field="scoutRecommendation" label="Scout Rating" />
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {filteredPlayers.map((player) => (
+            <tr key={player.id} className="hover:bg-gray-50">
+              <td className="px-2 py-2 w-[15%]">
+                <div className="font-medium text-gray-900 break-words">{player.name}</div>
+              </td>
+              <td className="px-2 py-2 w-[5%]">
+                <div className="text-sm text-gray-900">{player.position}</div>
+              </td>
+              <td className="px-2 py-2 w-[8%]">
+                <div className="text-sm text-gray-900">{player.foot}</div>
+              </td>
+              <td className="px-2 py-2 w-[13%]">
+                <div className="text-sm text-gray-900 truncate">{player.jurusan}</div>
+              </td>
+              <td className="px-2 py-2 w-[13%]">
+                <div className="text-sm text-gray-900 truncate">{player.domisili}</div>
+              </td>
+              <td className="px-2 py-2 w-[15%]">
+                <div className="flex flex-wrap gap-1">
+                  {(() => {
+                    const statuses = ensureArrayField(player.status);
+                    const displayStatuses = statuses.slice(0, 2);
+                    const extraCount = statuses.length - 2;
+                    
+                    return (
+                      <>
+                        {displayStatuses.map((status, index) => (
+                          <span
+                            key={`${player.id}-status-${index}`}
+                            className={`px-1 py-0.5 rounded text-xs font-medium ${getStatusColor(status)}`}
+                          >
+                            {status}
+                          </span>
+                        ))}
+                        {extraCount > 0 && (
+                          <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                            +{extraCount} more
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </td>
+              <td className="px-2 py-2 w-[15%]">
+                <div className="flex flex-wrap gap-1">
+                  {(() => {
+                    const tags = ensureArrayField(player.tags);
+                    const displayTags = tags.slice(0, 3);
+                    const extraCount = tags.length - 3;
+                    
+                    return (
+                      <>
+                        {displayTags.map((tag, index) => (
+                          <span
+                            key={`${player.id}-tag-${index}`}
+                            className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {extraCount > 0 && (
+                          <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                            +{extraCount} more
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </td>
+              <td className="px-2 py-2 w-[13%]">
+                <StarRating rating={player.scoutRecommendation || 0} size="sm" />
+              </td>
             </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredPlayers.map((player) => (
-              <tr key={player.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium text-gray-900">{player.name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{player.position}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex flex-wrap gap-1">
-                    {ensureArrayField(player.status).map((status, index) => (
-                      <span
-                        key={`${player.id}-status-${index}`}
-                        className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(status)}`}
-                      >
-                        {status}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex flex-wrap gap-1 max-w-[150px]">
-                    {ensureArrayField(player.tags).map((tag, index) => (
-                      <span
-                        key={`${player.id}-tag-${index}`}
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <StarRating rating={player.scoutRecommendation || 0} size="sm" />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{player.foot}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{player.domisili}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{player.jurusan}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{player.age}</div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
