@@ -19,6 +19,8 @@ export interface Filters {
   positionArray: string[];
   statusArray: string[];
   minRating: number;
+  footFilters?: string[];
+  tagFilters?: string[];
 }
 
 function App() {
@@ -28,13 +30,15 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'list' | 'formation'>('list')
   const [teamColor, setTeamColor] = useState<TeamColor>('green')
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     position: '',
     status: '',
     search: '',
     positionArray: [] as string[],
     statusArray: [] as string[],
-    minRating: 0
+    minRating: 0,
+    footFilters: [] as string[],
+    tagFilters: [] as string[]
   });
 
   useEffect(() => {
@@ -78,6 +82,32 @@ function App() {
       );
     }
     
+    // Apply minimum rating filter
+    if (filters.minRating > 0) {
+      result = result.filter(player => 
+        (player.scoutRecommendation || 0) >= filters.minRating
+      );
+    }
+    
+    // Apply foot filters
+    if (filters.footFilters && filters.footFilters.length > 0) {
+      result = result.filter(player => 
+        player.foot && filters.footFilters!.includes(player.foot)
+      );
+    }
+    
+    // Apply tag filters
+    if (filters.tagFilters && filters.tagFilters.length > 0) {
+      result = result.filter(player => {
+        const playerTags = Array.isArray(player.tags) ? player.tags : (player.tags ? [player.tags] : []);
+        return filters.tagFilters!.some(filterTag => 
+          playerTags.some(playerTag => 
+            playerTag.toLowerCase().includes(filterTag.toLowerCase())
+          )
+        );
+      });
+    }
+    
     setFilteredPlayers(result);
     
     // Automatically update formation players when filters change
@@ -97,6 +127,8 @@ function App() {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    footFilters?: string[];
+    tagFilters?: string[];
   }) => {
     setFilters(newFilters);
   };
@@ -185,7 +217,9 @@ function App() {
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-bold text-gray-800">4-2-3-1 Formation</h2>
                   <div className="flex space-x-2">
-                    {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search) && (
+                    {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search || 
+                      filters.minRating > 0 || (filters.footFilters && filters.footFilters.length > 0) || 
+                      (filters.tagFilters && filters.tagFilters.length > 0)) && (
                       <div className="flex items-center flex-wrap text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-md max-w-md">
                         <span className="mr-2 mb-1">Filtered:</span>
                         {filters.positionArray.map(pos => (
@@ -197,6 +231,15 @@ function App() {
                         {filters.search && (
                           <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">{filters.search}</span>
                         )}
+                        {filters.minRating > 0 && (
+                          <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≥{filters.minRating.toFixed(1)}</span>
+                        )}
+                        {filters.footFilters && filters.footFilters.map(foot => (
+                          <span key={foot} className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded mr-1 mb-1">Foot: {foot}</span>
+                        ))}
+                        {filters.tagFilters && filters.tagFilters.map(tag => (
+                          <span key={tag} className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded mr-1 mb-1">Tag: {tag}</span>
+                        ))}
                       </div>
                     )}
                     <button

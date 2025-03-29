@@ -16,6 +16,8 @@ type FormationDisplayProps = {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    footFilters?: string[];
+    tagFilters?: string[];
   };
 };
 
@@ -76,6 +78,19 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     const matchesPosition = filters.positionArray.length === 0 || 
                            filters.positionArray.includes(player.position);
     
+    // Add foot filter handling
+    const matchesFoot = !filters.footFilters || filters.footFilters.length === 0 || 
+                         (player.foot && filters.footFilters.includes(player.foot));
+    
+    // Add tag filter handling
+    const playerTags = ensureArrayField(player.tags);
+    const matchesTags = !filters.tagFilters || filters.tagFilters.length === 0 || 
+                       filters.tagFilters.some(filterTag => 
+                         playerTags.some(playerTag => 
+                           playerTag.toLowerCase().includes(filterTag.toLowerCase())
+                         )
+                       );
+    
     const playerStatus = ensureArrayField(player.status);
     const matchesStatus = filters.statusArray.length === 0 || 
                         filters.statusArray.some(filterStatus => 
@@ -84,7 +99,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
 
     const matchesRating = (player.scoutRecommendation || 0) >= filters.minRating;
     
-    return matchesSearch && matchesPosition && matchesStatus && matchesRating;
+    return matchesSearch && matchesPosition && matchesFoot && matchesTags && matchesStatus && matchesRating;
   });
 
   const { formationPlayers, positionPlayersMap } = useFormationData(filteredPlayersForFormation, formation);

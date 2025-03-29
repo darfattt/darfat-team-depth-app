@@ -14,6 +14,8 @@ interface PlayerListProps {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    footFilters?: string[];
+    tagFilters?: string[];
   }
   onFilterChange: (filters: {
     position: string;
@@ -22,6 +24,8 @@ interface PlayerListProps {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    footFilters?: string[];
+    tagFilters?: string[];
   }) => void
 }
 
@@ -34,8 +38,8 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const [searchTerm, setSearchTerm] = useState(filters.search || '')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search || '')
   const [positionFilters, setPositionFilters] = useState<string[]>(filters.positionArray || [])
-  const [footFilters, setFootFilters] = useState<string[]>([])
-  const [tagFilters, setTagFilters] = useState<string[]>([])
+  const [footFilters, setFootFilters] = useState<string[]>(filters.footFilters || [])
+  const [tagFilters, setTagFilters] = useState<string[]>(filters.tagFilters || [])
   const [statusFilter, setStatusFilter] = useState<string[]>(filters.statusArray || [])
   const [minRating, setMinRating] = useState<number>(filters.minRating || 0)
   
@@ -53,7 +57,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
     search: filters.search,
     positionArray: filters.positionArray,
     statusArray: filters.statusArray,
-    minRating: filters.minRating
+    minRating: filters.minRating,
+    footFilters: filters.footFilters || [],
+    tagFilters: filters.tagFilters || []
   });
   
   // Debounce search term changes
@@ -78,7 +84,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
       filters.search === prevFilters.current.search &&
       JSON.stringify(filters.positionArray) === JSON.stringify(prevFilters.current.positionArray) &&
       JSON.stringify(filters.statusArray) === JSON.stringify(prevFilters.current.statusArray) &&
-      filters.minRating === prevFilters.current.minRating
+      filters.minRating === prevFilters.current.minRating &&
+      JSON.stringify(filters.footFilters) === JSON.stringify(prevFilters.current.footFilters) &&
+      JSON.stringify(filters.tagFilters) === JSON.stringify(prevFilters.current.tagFilters)
     ) {
       return;
     }
@@ -105,6 +113,15 @@ const PlayerList: React.FC<PlayerListProps> = ({
         setMinRating(filters.minRating || 0);
       }
       
+      // Add handling for foot and tag filters
+      if (JSON.stringify(filters.footFilters) !== JSON.stringify(footFilters)) {
+        setFootFilters(filters.footFilters || []);
+      }
+      
+      if (JSON.stringify(filters.tagFilters) !== JSON.stringify(tagFilters)) {
+        setTagFilters(filters.tagFilters || []);
+      }
+      
       // Update previous filters
       prevFilters.current = {
         position: filters.position,
@@ -112,7 +129,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
         search: filters.search,
         positionArray: filters.positionArray,
         statusArray: filters.statusArray,
-        minRating: filters.minRating
+        minRating: filters.minRating,
+        footFilters: filters.footFilters || [],
+        tagFilters: filters.tagFilters || []
       };
     } finally {
       // Reset the flag after all updates are queued
@@ -132,7 +151,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
       search: debouncedSearchTerm.trim(),
       positionArray: positionFilters,
       statusArray: statusFilter,
-      minRating: minRating
+      minRating: minRating,
+      footFilters: footFilters,
+      tagFilters: tagFilters
     };
     
     // Check if the filters are actually different before updating parent
@@ -140,7 +161,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
       updatedFilters.search !== prevFilters.current.search ||
       JSON.stringify(updatedFilters.positionArray) !== JSON.stringify(prevFilters.current.positionArray) ||
       JSON.stringify(updatedFilters.statusArray) !== JSON.stringify(prevFilters.current.statusArray) ||
-      updatedFilters.minRating !== prevFilters.current.minRating
+      updatedFilters.minRating !== prevFilters.current.minRating ||
+      JSON.stringify(updatedFilters.footFilters) !== JSON.stringify(prevFilters.current.footFilters) ||
+      JSON.stringify(updatedFilters.tagFilters) !== JSON.stringify(prevFilters.current.tagFilters)
     ) {
       // Update our tracking ref first
       prevFilters.current = {
@@ -149,13 +172,15 @@ const PlayerList: React.FC<PlayerListProps> = ({
         search: updatedFilters.search,
         positionArray: updatedFilters.positionArray,
         statusArray: updatedFilters.statusArray,
-        minRating: updatedFilters.minRating
+        minRating: updatedFilters.minRating,
+        footFilters: updatedFilters.footFilters,
+        tagFilters: updatedFilters.tagFilters
       };
       
       // Then update parent
       onFilterChange(updatedFilters);
     }
-  }, [positionFilters, statusFilter, debouncedSearchTerm, minRating, onFilterChange]);
+  }, [positionFilters, statusFilter, footFilters, tagFilters, debouncedSearchTerm, minRating, onFilterChange]);
   
   // Helper function to ensure tags/status is always an array
   const ensureArrayField = (field: any): string[] => {
