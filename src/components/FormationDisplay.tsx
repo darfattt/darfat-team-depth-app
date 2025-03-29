@@ -848,6 +848,17 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     );
   };
 
+  // First, add a helper function to calculate average rating
+  const calculatePositionAverageRating = (players: Player[]): number => {
+    const ratings = players
+      .map(player => player.scoutRecommendation)
+      .filter((rating): rating is number => rating !== undefined);
+    
+    return ratings.length > 0
+      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+      : 0;
+  };
+
   return (
     <div className="relative w-full h-[1210px] border border-gray-600 rounded-lg overflow-hidden">
       {/* Player count and toggle button container */}
@@ -907,7 +918,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         </div>
       )}
       
-      {/* Position circles with player names in a single render pass */}
+      {/* Position circles with player names */}
       {formationPlayers.map((item, index) => {
         const { player, position, coordinates } = item;
         const positionLabel = showPlayerCount ? getPositionLabel(position) : getDetailedPositionLabel(position);
@@ -916,23 +927,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         // Get all players for this position
         const playersForPosition = positionPlayersMap[position] || [];
         const playerCount = getPositionPlayerCount(position, playersForPosition);
-
-        // Debug log for positions with multiple players
-        if (playersForPosition.length > 1) {
-          console.log(`Position ${position} has ${playersForPosition.length} players:`, 
-            playersForPosition.map(p => p.name).join(', '));
-        }
         
-        // Show up to 4 backup players
-        const maxBackupPlayers = 4;
-        const backupPlayersToShow = mainPlayer 
-          ? playersForPosition.filter(p => p.id !== mainPlayer.id).slice(0, maxBackupPlayers) 
-          : playersForPosition.slice(0, maxBackupPlayers);
-
-        // Calculate if there are additional players beyond what we're showing
-        const additionalPlayers = mainPlayer
-          ? playersForPosition.length - backupPlayersToShow.length - 1 // -1 for main player
-          : playersForPosition.length - backupPlayersToShow.length;
+        // Calculate average rating for this position
+        const averageRating = calculatePositionAverageRating(playersForPosition);
 
         const animationDelay = `${index * 0.1}s`;
         
@@ -957,7 +954,14 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                   {showPlayerCount ? playerCount : positionLabel}
                 </span>
               </div>
-              
+
+              {/* Average Rating Display - Stars only */}
+              {showRatings && averageRating > 0 && (
+                <div className="mt-1 mb-1 flex justify-center">
+                  <StarRating rating={averageRating} size="sm" />
+                </div>
+              )}
+
               {/* Player name & tag */}
               <div className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg mt-2`}>
                 {mainPlayer ? (
@@ -979,9 +983,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     )}
                     
                     {/* Backup players */}
-                    {backupPlayersToShow.length > 0 && (
+                    {playersForPosition.length > 1 && (
                       <div className="mt-1 pt-1 border-t border-gray-700">
-                        {backupPlayersToShow.map((backupPlayer: Player) => (
+                        {playersForPosition.slice(1).map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
                             <div 
                               className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
@@ -997,13 +1001,6 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                             )}
                           </div>
                         ))}
-                        
-                        {/* Show additional players indicator if needed */}
-                        {additionalPlayers > 0 && (
-                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
-                            +{additionalPlayers} more player{additionalPlayers > 1 ? 's' : ''}
-                          </div>
-                        )}
                       </div>
                     )}
                   </>
@@ -1014,9 +1011,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     </div>
                     
                     {/* Show backup players even when there's no main player */}
-                    {backupPlayersToShow.length > 0 && (
+                    {playersForPosition.length > 1 && (
                       <div className="mt-1 pt-1 border-t border-gray-700">
-                        {backupPlayersToShow.map((backupPlayer: Player) => (
+                        {playersForPosition.slice(1).map((backupPlayer: Player) => (
                           <div key={backupPlayer.id} className="mt-1">
                             <div 
                               className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
@@ -1032,13 +1029,6 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                             )}
                           </div>
                         ))}
-                        
-                        {/* Show additional players indicator if needed */}
-                        {additionalPlayers > 0 && (
-                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
-                            +{additionalPlayers} more player{additionalPlayers > 1 ? 's' : ''}
-                          </div>
-                        )}
                       </div>
                     )}
                   </>
