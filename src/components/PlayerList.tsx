@@ -244,9 +244,9 @@ const PlayerList: React.FC<PlayerListProps> = ({
   })
 
   const positions = Array.from(new Set(players.map(p => p.position))).filter(Boolean).sort()
-  const footOptions = ['left', 'right', 'both']
+  const footOptions = ['Kiri', 'Kanan', 'Keduanya']
   const allTags = Array.from(new Set(players.flatMap(p => ensureArrayField(p.tags)))).filter(Boolean).sort()
-  const statusOptions = ['HG', 'Player To Watch', 'Unknown']
+  const statusOptions = ['HG', 'Player To Watch', 'Unknown', 'Give a chance','Existing Player','Not Interested']
 
   const renderSortIcon = (field: keyof Player) => {
     if (sortField !== field) return null
