@@ -293,6 +293,30 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   const PositionStatsTooltip = ({ position, players }: { position: string, players: Player[] }) => {
     if (!players || players.length === 0) return null;
     
+    // Calculate average scout rating for the position
+    const scoutRatings = players
+      .map(player => player.scoutRecommendation)
+      .filter((rating): rating is number => rating !== undefined);
+    
+    const averageRating = scoutRatings.length > 0
+      ? Math.round((scoutRatings.reduce((a, b) => a + b, 0) / scoutRatings.length) * 10) / 10
+      : 0;
+
+    // Count players by rating range
+    const ratingRangeCounts = {
+      perfect: 0, // 5 stars
+      great: 0,   // 4-5 stars
+      good: 0,    // 3-4 stars
+      low: 0      // 0-3 stars
+    };
+
+    scoutRatings.forEach(rating => {
+      if (rating === 5) ratingRangeCounts.perfect++;
+      else if (rating >= 4) ratingRangeCounts.great++;
+      else if (rating >= 3) ratingRangeCounts.good++;
+      else ratingRangeCounts.low++;
+    });
+    
     // Count players by status
     const statusCounts: Record<string, number> = {};
     players.forEach(player => {
@@ -316,7 +340,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     });
     
     return (
-      <div className="fixed z-50 bg-gray-900/95 p-3 rounded-md shadow-xl text-left min-w-[200px]"
+      <div className="fixed z-50 bg-gray-900/95 p-3 rounded-md shadow-xl text-left min-w-[280px]"
         style={{
           top: `${tooltipPosition.y - 10}px`,
           left: `${tooltipPosition.x}px`,
@@ -328,8 +352,38 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
             {getPositionLabel(position)} Stats ({players.length} players)
           </div>
           
-          {/* Status counts */}
+          {/* Scout Rating Section */}
           <div className="flex flex-col gap-1">
+            <div className="text-gray-300 text-xs font-medium">Scout Rating:</div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-white text-xs">Average:</span>
+              <div className="flex items-center gap-1.5">
+                <StarRating rating={averageRating} size="xs" />
+                <span className="text-white font-medium text-xs">({averageRating})</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              {[
+                { label: 'Perfect', range: '5 Stars', count: ratingRangeCounts.perfect, stars: 5 },
+                { label: 'Great', range: '4-5 Stars', count: ratingRangeCounts.great, stars: 4 },
+                { label: 'Good', range: '3-4 Stars', count: ratingRangeCounts.good, stars: 3 },
+                { label: 'Low', range: '0-3 Stars', count: ratingRangeCounts.low, stars: 2 }
+              ].map(({ label, range, count, stars }) => count > 0 && (
+                <div key={label} className="flex justify-between text-xs items-center">
+                  <div className="flex items-center gap-1.5">
+                    <StarRating rating={stars} size="xs" />
+                    <span className="text-gray-300">
+                      {label} ({range})
+                    </span>
+                  </div>
+                  <span className="text-white font-medium">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Status counts */}
+          <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-gray-700">
             <div className="text-gray-300 text-xs font-medium">By Status:</div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {Object.entries(statusCounts).map(([status, count]) => (
@@ -386,7 +440,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
 
   // Function to calculate team statistics
   const calculateTeamStats = (players: Player[]) => {
-    // Base stats object
+    // Base stats object (add scout rating stats)
     const stats = {
       totalPlayers: players.length,
       byStatus: {} as Record<string, number>,
@@ -396,14 +450,31 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
       byDomisili: {} as Record<string, number>,
       byJurusan: {} as Record<string, number>,
       averageAge: 0,
-      averageExperience: 0
+      averageExperience: 0,
+      averageScoutRating: 0,
+      byScoutRating: {} as Record<string, number>, // To store counts for each rating
+      averageScoutRatingByPosition: {} as Record<string, number>,
+      totalPlayersByRatingRange: {} as Record<string, { count: number; label: string }>,
     };
     
     // Initialize counters for averages
     let totalAge = 0;
     let totalExperience = 0;
+    let totalScoutRating = 0;
     let ageCount = 0;
     let experienceCount = 0;
+    let scoutRatingCount = 0;
+    
+    // Initialize position-based rating tracking
+    const positionRatings: Record<string, { total: number; count: number }> = {};
+    
+    // Initialize rating ranges with labels
+    stats.totalPlayersByRatingRange = {
+      'low': { count: 0, label: '0-3 Stars' },
+      'good': { count: 0, label: '3-4 Stars' },
+      'great': { count: 0, label: '4-5 Stars' },
+      'perfect': { count: 0, label: '5 Stars' }
+    };
     
     // Calculate all stats
     players.forEach(player => {
@@ -440,6 +511,33 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
         stats.byJurusan[player.jurusan] = (stats.byJurusan[player.jurusan] || 0) + 1;
       }
       
+      // Scout rating calculations
+      if (player.scoutRecommendation !== undefined) {
+        totalScoutRating += player.scoutRecommendation;
+        scoutRatingCount++;
+        
+        // Group ratings into new ranges
+        const rating = player.scoutRecommendation;
+        if (rating === 5) {
+          stats.totalPlayersByRatingRange.perfect.count++;
+        } else if (rating >= 4) {
+          stats.totalPlayersByRatingRange.great.count++;
+        } else if (rating >= 3) {
+          stats.totalPlayersByRatingRange.good.count++;
+        } else {
+          stats.totalPlayersByRatingRange.low.count++;
+        }
+        
+        // Track ratings by position
+        if (player.position && player.scoutRecommendation !== undefined) {
+          if (!positionRatings[player.position]) {
+            positionRatings[player.position] = { total: 0, count: 0 };
+          }
+          positionRatings[player.position].total += player.scoutRecommendation;
+          positionRatings[player.position].count += 1;
+        }
+      }
+      
       // Sum for averages
       if (player.age) {
         totalAge += player.age;
@@ -455,6 +553,13 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     // Calculate averages
     stats.averageAge = ageCount > 0 ? Math.round((totalAge / ageCount) * 10) / 10 : 0;
     stats.averageExperience = experienceCount > 0 ? Math.round((totalExperience / experienceCount) * 10) / 10 : 0;
+    stats.averageScoutRating = scoutRatingCount > 0 ? Math.round((totalScoutRating / scoutRatingCount) * 10) / 10 : 0;
+    
+    // Calculate average ratings by position
+    Object.entries(positionRatings).forEach(([position, data]) => {
+      stats.averageScoutRatingByPosition[position] = 
+        Math.round((data.total / data.count) * 10) / 10;
+    });
     
     return stats;
   };
@@ -487,6 +592,13 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
               <div className="flex justify-between text-xs">
                 <span className="text-gray-300">Experience:</span>
                 <span className="text-white font-medium">{stats.averageExperience} years</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-300">Scout Rating:</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-white font-medium">{stats.averageScoutRating}</span>
+                  <StarRating rating={stats.averageScoutRating} size="xs" />
+                </div>
               </div>
             </div>
             
@@ -538,7 +650,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-        <div className="bg-gray-900 rounded-lg shadow-2xl p-4 max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <div className="bg-gray-900 rounded-lg shadow-2xl p-4 max-w-[800px] max-h-[80vh] overflow-y-auto">
           <div className="flex justify-between items-center border-b border-gray-700 pb-2 mb-4">
             <h3 className="text-lg font-bold text-white">Complete Team Statistics</h3>
             <button 
@@ -552,16 +664,23 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Averages section */}
+            {/* Averages section with scout rating */}
             <div className="bg-gray-800/60 p-3 rounded-lg">
               <h4 className="text-white font-bold text-sm mb-2">Averages</h4>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-gray-300">Average Age:</span>
                 <span className="text-white font-medium">{stats.averageAge} years</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm mb-2">
                 <span className="text-gray-300">Average Experience:</span>
                 <span className="text-white font-medium">{stats.averageExperience} years</span>
+              </div>
+              <div className="flex justify-between text-sm items-center">
+                <span className="text-gray-300">Average Scout Rating:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-medium">{stats.averageScoutRating}</span>
+                  <StarRating rating={stats.averageScoutRating} size="sm" />
+                </div>
               </div>
             </div>
             
@@ -666,6 +785,61 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                     </div>
                   ))
                 }
+              </div>
+            </div>
+            
+            {/* Updated section: Average Scout Rating by Position */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">Average Scout Rating by Position</h4>
+              <div className="grid grid-cols-1 gap-y-2">
+                {Object.entries(stats.averageScoutRatingByPosition)
+                  .sort(([, a], [, b]) => b - a) // Sort by rating descending
+                  .map(([position, rating]) => (
+                    <div key={position} className="flex items-center justify-between">
+                      <span className="text-gray-300 text-sm">{position}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-medium text-sm">{rating.toFixed(1)}</span>
+                        <StarRating rating={rating} size="sm" />
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+            
+            {/* Updated section: Players by Rating Range */}
+            <div className="bg-gray-800/60 p-3 rounded-lg">
+              <h4 className="text-white font-bold text-sm mb-2">Players by Rating Range</h4>
+              <div className="space-y-3">
+                {[
+                  { key: 'perfect', stars: 5, color: 'bg-yellow-400' },
+                  { key: 'great', stars: 4, color: 'bg-yellow-500' },
+                  { key: 'good', stars: 3, color: 'bg-yellow-600' },
+                  { key: 'low', stars: 2, color: 'bg-yellow-700' }
+                ].map(({ key, stars, color }) => {
+                  const data = stats.totalPlayersByRatingRange[key];
+                  const percentage = Math.round((data.count / stats.totalPlayers) * 100);
+                  return (
+                    <div key={key} className="relative">
+                      <div className="flex justify-between text-sm items-center mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-300">{data.label}:</span>
+                          <StarRating rating={stars} size="sm" />
+                        </div>
+                        <span className="text-white font-medium">
+                          {data.count} <span className="text-gray-400">({percentage}%)</span>
+                        </span>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full ${color} rounded-full transition-all duration-500`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
