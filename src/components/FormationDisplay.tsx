@@ -99,10 +99,15 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   const getPositionPlayerCount = (position: string, playersForPosition: Player[]): number => {
     if (!playersForPosition) return 0;
     
-    console.log(`Count for ${position}: ${playersForPosition.length} players`);
-    if (playersForPosition.length > 0) {
-      console.log(`Players at ${position}: ${playersForPosition.map(p => p.name).join(', ')}`);
+    // Enhanced logging for CB positions
+    if (position === 'LCB' || position === 'RCB') {
+      console.log(`${position} count: ${playersForPosition.length} players`);
+      console.log(`${position} players:`, playersForPosition.map(p => ({
+        name: p.name,
+        position: p.position
+      })));
     }
+    
     return playersForPosition.length;
   };
 
@@ -114,6 +119,18 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
       )
     );
   }, [positionPlayersMap]);
+
+  // Add this logging in your component where you process the formation players
+  useEffect(() => {
+    // Log CB-related positions
+    console.log('CB Position Distribution:');
+    console.log('LCB:', positionPlayersMap['LCB']?.map(p => ({ name: p.name, position: p.position })));
+    console.log('RCB:', positionPlayersMap['RCB']?.map(p => ({ name: p.name, position: p.position })));
+    console.log('Original CB players:', players.filter(p => p.position.includes('CB')).map(p => ({
+      name: p.name,
+      position: p.position
+    })));
+  }, [positionPlayersMap, players]);
 
   const colorScheme = useMemo((): ColorScheme => {
     switch (teamColor) {
@@ -187,10 +204,10 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   // Function to get more specific position display names
   const getDetailedPositionLabel = (position: string): string => {
     switch (position) {
-      case 'LCB': return 'LCB';
-      case 'RCB': return 'RCB';
-      case 'LCDM': return 'LCDM';
-      case 'RCDM': return 'RCDM';
+      case 'LCB': return 'LCB';  // Keep as LCB
+      case 'RCB': return 'RCB';  // Keep as RCB
+      case 'CDM': return 'CDM';  // Updated from LCDM
+      case 'CM': return 'CM';    // Updated from RCDM
       default: return getPositionLabel(position);
     }
   };
@@ -447,7 +464,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     const stats = calculateTeamStats(players);
     
     return (
-      <div className="absolute bottom-4 left-4 z-20 p-3 bg-gray-900/90 rounded-lg shadow-lg max-w-[400px]">
+      <div className="absolute top-4 left-4 z-20 p-3 bg-gray-900/90 rounded-lg shadow-lg max-w-[400px]">
         <div className="flex flex-col gap-2">
           <div className="text-white font-bold text-sm border-b border-gray-700 pb-1 flex justify-between items-center">
             <span>Team Statistics ({stats.totalPlayers} players)</span>
