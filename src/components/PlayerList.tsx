@@ -32,6 +32,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
 }) => {
   // Use initial values from props
   const [searchTerm, setSearchTerm] = useState(filters.search || '')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search || '')
   const [positionFilters, setPositionFilters] = useState<string[]>(filters.positionArray || [])
   const [footFilters, setFootFilters] = useState<string[]>([])
   const [tagFilters, setTagFilters] = useState<string[]>([])
@@ -43,49 +44,118 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
-  // Update local state when props change
+  // Ref to track if we're handling an update from props
+  const isProcessingPropsUpdate = useRef(false);
+  // Ref to track previous filter values
+  const prevFilters = useRef({
+    position: filters.position,
+    status: filters.status,
+    search: filters.search,
+    positionArray: filters.positionArray,
+    statusArray: filters.statusArray,
+    minRating: filters.minRating
+  });
+  
+  // Debounce search term changes
   useEffect(() => {
-    // Only update if values are different to avoid loops
-    if (filters.search !== searchTerm) {
-      setSearchTerm(filters.search || '');
-    }
+    // Skip the effect if we're currently processing a props update
+    if (isProcessingPropsUpdate.current) return;
     
-    // Use array filters directly from props, but only if they're actually different
-    if (filters.positionArray && JSON.stringify(positionFilters) !== JSON.stringify(filters.positionArray)) {
-      setPositionFilters(filters.positionArray);
-    }
-    
-    if (filters.statusArray && JSON.stringify(statusFilter) !== JSON.stringify(filters.statusArray)) {
-      setStatusFilter(filters.statusArray);
-    }
+    const timerId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce time
 
-    if (filters.minRating !== undefined && filters.minRating !== minRating) {
-      setMinRating(filters.minRating);
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [searchTerm]);
+  
+  // Update local state when props change
+  // This effect should only respond to changes in the filters prop
+  useEffect(() => {
+    // Skip if our local state changes triggered the filter change
+    if (
+      filters.search === prevFilters.current.search &&
+      JSON.stringify(filters.positionArray) === JSON.stringify(prevFilters.current.positionArray) &&
+      JSON.stringify(filters.statusArray) === JSON.stringify(prevFilters.current.statusArray) &&
+      filters.minRating === prevFilters.current.minRating
+    ) {
+      return;
     }
-  }, [filters, searchTerm, positionFilters, statusFilter, minRating]);
+    
+    // Set flag to prevent other effects from running
+    isProcessingPropsUpdate.current = true;
+    
+    try {
+      // Only update local state if the prop value has changed
+      if (filters.search !== debouncedSearchTerm) {
+        setSearchTerm(filters.search || '');
+        setDebouncedSearchTerm(filters.search || '');
+      }
+      
+      if (JSON.stringify(filters.positionArray) !== JSON.stringify(positionFilters)) {
+        setPositionFilters(filters.positionArray || []);
+      }
+      
+      if (JSON.stringify(filters.statusArray) !== JSON.stringify(statusFilter)) {
+        setStatusFilter(filters.statusArray || []);
+      }
+      
+      if (filters.minRating !== minRating) {
+        setMinRating(filters.minRating || 0);
+      }
+      
+      // Update previous filters
+      prevFilters.current = {
+        position: filters.position,
+        status: filters.status,
+        search: filters.search,
+        positionArray: filters.positionArray,
+        statusArray: filters.statusArray,
+        minRating: filters.minRating
+      };
+    } finally {
+      // Reset the flag after all updates are queued
+      isProcessingPropsUpdate.current = false;
+    }
+  }, [filters]);
 
   // Update parent component's filters when local filters change
+  // This effect should only run when local state changes, not when props change
   useEffect(() => {
-    // Add a ref to track if this is a filter change from local state vs. from parent
+    // Skip if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     const updatedFilters = {
       position: positionFilters.length === 1 ? positionFilters[0] : '',
       status: statusFilter.length === 1 ? statusFilter[0] : '',
-      search: searchTerm,
+      search: debouncedSearchTerm.trim(),
       positionArray: positionFilters,
       statusArray: statusFilter,
       minRating: minRating
     };
     
-    // Check if the filters are actually different before updating
+    // Check if the filters are actually different before updating parent
     if (
-      updatedFilters.search !== filters.search ||
-      JSON.stringify(updatedFilters.positionArray) !== JSON.stringify(filters.positionArray) ||
-      JSON.stringify(updatedFilters.statusArray) !== JSON.stringify(filters.statusArray) ||
-      updatedFilters.minRating !== filters.minRating
+      updatedFilters.search !== prevFilters.current.search ||
+      JSON.stringify(updatedFilters.positionArray) !== JSON.stringify(prevFilters.current.positionArray) ||
+      JSON.stringify(updatedFilters.statusArray) !== JSON.stringify(prevFilters.current.statusArray) ||
+      updatedFilters.minRating !== prevFilters.current.minRating
     ) {
+      // Update our tracking ref first
+      prevFilters.current = {
+        position: updatedFilters.position,
+        status: updatedFilters.status,
+        search: updatedFilters.search,
+        positionArray: updatedFilters.positionArray,
+        statusArray: updatedFilters.statusArray,
+        minRating: updatedFilters.minRating
+      };
+      
+      // Then update parent
       onFilterChange(updatedFilters);
     }
-  }, [positionFilters, statusFilter, searchTerm, minRating, filters, onFilterChange]);
+  }, [positionFilters, statusFilter, debouncedSearchTerm, minRating, onFilterChange]);
   
   // Helper function to ensure tags/status is always an array
   const ensureArrayField = (field: any): string[] => {
@@ -142,51 +212,78 @@ const PlayerList: React.FC<PlayerListProps> = ({
 
   // Toggle filter selection
   const togglePositionFilter = (position: string) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     setPositionFilters(prev => 
       prev.includes(position) 
         ? prev.filter(p => p !== position) 
         : [...prev, position]
-    )
-  }
+    );
+  };
 
   const toggleFootFilter = (foot: string) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     setFootFilters(prev => 
       prev.includes(foot) 
         ? prev.filter(f => f !== foot) 
         : [...prev, foot]
-    )
-  }
+    );
+  };
 
   const toggleTagFilter = (tag: string) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     setTagFilters(prev => 
       prev.includes(tag) 
         ? prev.filter(t => t !== tag) 
         : [...prev, tag]
-    )
-  }
+    );
+  };
 
   // Update the toggle function for status filters
   const toggleStatusFilter = (status: string) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     setStatusFilter(prev => 
       prev.includes(status) 
         ? prev.filter(s => s !== status) 
         : [...prev, status]
-    )
-  }
+    );
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     setSearchTerm(e.target.value);
+  };
+
+  // Function to clear search term
+  const clearSearchTerm = () => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
   };
 
   // Clear all filters
   const clearFilters = () => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
     setPositionFilters([]);
     setFootFilters([]);
     setTagFilters([]);
     setStatusFilter([]);
-    setSearchTerm('');
-    setMinRating(0);
-  }
+    clearSearchTerm();
+    handleMinRatingChange(0);
+  };
 
   const sortedPlayers = [...players].sort((a, b) => {
     const fieldA = a[sortField]
@@ -328,6 +425,14 @@ const PlayerList: React.FC<PlayerListProps> = ({
     }
   };
 
+  // Function to handle minRating changes
+  const handleMinRatingChange = (value: number) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
+    setMinRating(value);
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and dropdown filters */}
@@ -464,7 +569,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
             <span className="text-sm font-medium text-gray-700">Minimum Rating</span>
             {minRating > 0 && (
               <button 
-                onClick={() => setMinRating(0)}
+                onClick={() => handleMinRatingChange(0)}
                 className="text-xs text-blue-600 hover:text-blue-800"
               >
                 Clear
@@ -478,7 +583,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
               max="5"
               step="0.5"
               value={minRating}
-              onChange={(e) => setMinRating(Number(e.target.value))}
+              onChange={(e) => handleMinRatingChange(Number(e.target.value))}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
             <span className="text-sm text-gray-600 min-w-[3rem]">{minRating.toFixed(1)}</span>
@@ -493,7 +598,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
           {searchTerm && (
             <span className="filter-badge filter-badge-search flex items-center">
               Search: {searchTerm}
-              <button onClick={() => setSearchTerm('')} className="ml-1">
+              <button onClick={() => clearSearchTerm()} className="ml-1">
                 <XMarkIcon className="w-3 h-3" />
               </button>
             </span>
@@ -529,7 +634,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
           {minRating > 0 && (
             <span className="filter-badge flex items-center bg-yellow-100 text-yellow-800">
               Min Rating: {minRating.toFixed(1)}
-              <button onClick={() => setMinRating(0)} className="ml-1">
+              <button onClick={() => handleMinRatingChange(0)} className="ml-1">
                 <XMarkIcon className="w-3 h-3" />
               </button>
             </span>
