@@ -1,9 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Player } from '../types'
+import { Player, ScoutRecommendation } from '../types'
 import * as XLSX from 'xlsx'
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { parseExcelData, generateExcelFile } from '../utils/excelGenerator'
 import StarRating from './StarRating'
+
+// Add interfaces for the edit functionality
+interface EditablePlayer {
+  id: string | number;
+  name: string;
+  position: string;
+  tags: string[];
+  status: string[];
+  scoutRecommendation?: number;
+  recommendations?: ScoutRecommendation[];
+  foot?: string;
+  domisili?: string;
+  jurusan?: string;
+  age?: number;
+  height?: number;
+  weight?: number;
+  experience?: number;
+}
 
 interface PlayerListProps {
   players: Player[]
@@ -27,12 +45,18 @@ interface PlayerListProps {
     footFilters?: string[];
     tagFilters?: string[];
   }) => void
+  // Optional callback for player updates
+  onPlayerUpdate?: (updatedPlayer: Player) => void
+  // Indicates if the app is currently saving player data
+  isSaving?: boolean
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({ 
   players, 
   filters,
-  onFilterChange
+  onFilterChange,
+  onPlayerUpdate,
+  isSaving = false
 }) => {
   // Use initial values from props
   const [searchTerm, setSearchTerm] = useState(filters.search || '')
@@ -42,6 +66,13 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const [tagFilters, setTagFilters] = useState<string[]>(filters.tagFilters || [])
   const [statusFilter, setStatusFilter] = useState<string[]>(filters.statusArray || [])
   const [minRating, setMinRating] = useState<number>(filters.minRating || 0)
+  
+  // State for edit dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [playerToEdit, setPlayerToEdit] = useState<EditablePlayer | null>(null)
+  const [tagsInput, setTagsInput] = useState('')
+  const [statusInput, setStatusInput] = useState('')
+  const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false)
   
   const [sortField, setSortField] = useState<keyof Player>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -187,7 +218,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
     if (!field) return [];
     if (Array.isArray(field)) return field;
     if (typeof field === 'string') {
-      // Handle comma-separated string format from Excel
+      // Handle comma-separated string format from Excel or Supabase
       return field.split(',').map(item => item.trim()).filter(Boolean);
     }
     return [];
@@ -458,6 +489,176 @@ const PlayerList: React.FC<PlayerListProps> = ({
     setMinRating(value);
   };
 
+  // Function to convert Player to EditablePlayer
+  const playerToEditable = (player: Player): EditablePlayer => {
+    // Create default recommendations if they don't exist
+    const defaultRecommendations: ScoutRecommendation[] = [
+      { scoutName: "Darfat", recommendationValue: 0 },
+      { scoutName: "Badru", recommendationValue: 0 },
+      { scoutName: "Handrian", recommendationValue: 0 },
+      { scoutName: "Hendrian", recommendationValue: 0 },
+      { scoutName: "Fadzri", recommendationValue: 0 },
+      { scoutName: "Hendra DP", recommendationValue: 0 },
+      { scoutName: "Scout 7", recommendationValue: 0 },
+      { scoutName: "Scout 8", recommendationValue: 0 }
+    ];
+
+    // Merge existing recommendations with default ones
+    const mergedRecommendations = player.recommendations
+      ? [...player.recommendations]
+      : [];
+    
+    // Ensure all default scouts exist in the recommendations
+    defaultRecommendations.forEach(defaultRec => {
+      if (!mergedRecommendations.some(rec => rec.scoutName === defaultRec.scoutName)) {
+        mergedRecommendations.push(defaultRec);
+      }
+    });
+
+    return {
+      ...player,
+      // Ensure tags is always an array
+      tags: ensureArrayField(player.tags),
+      // Ensure status is always an array
+      status: ensureArrayField(player.status),
+      // Add recommendations
+      recommendations: mergedRecommendations
+    };
+  };
+
+  // Function to get color class based on rating value
+  const getRatingColorClass = (rating: number): string => {
+    if (rating >= 4) return 'bg-green-500'; // Excellent
+    if (rating >= 3) return 'bg-blue-500';  // Good
+    if (rating >= 2) return 'bg-yellow-500'; // Average
+    if (rating >= 1) return 'bg-orange-500'; // Below average
+    return 'bg-red-500'; // Poor
+  };
+
+  // Function to handle scout recommendation change
+  const handleScoutRecommendationChange = (scoutName: string, value: number) => {
+    if (playerToEdit) {
+      // Round to nearest 0.5 if needed
+      const roundedValue = Math.round(value * 2) / 2;
+      
+      const recommendations = playerToEdit.recommendations || [];
+      const updatedRecommendations = [...recommendations];
+      
+      // Find existing recommendation or add new one
+      const existingIndex = updatedRecommendations.findIndex(rec => rec.scoutName === scoutName);
+      if (existingIndex >= 0) {
+        updatedRecommendations[existingIndex].recommendationValue = roundedValue;
+      } else {
+        updatedRecommendations.push({ scoutName, recommendationValue: roundedValue });
+      }
+      
+      // Update player with new recommendations
+      setPlayerToEdit({
+        ...playerToEdit,
+        recommendations: updatedRecommendations
+      });
+
+      // Calculate average for the scout recommendation field
+      if (updatedRecommendations.length > 0) {
+        // Only include non-zero recommendations in the average
+        const nonZeroRecs = updatedRecommendations.filter(rec => rec.recommendationValue > 0);
+        if (nonZeroRecs.length > 0) {
+          const sum = nonZeroRecs.reduce((total, rec) => total + rec.recommendationValue, 0);
+          const average = sum / nonZeroRecs.length;
+          // Round to nearest 0.5
+          const roundedAverage = Math.round(average * 2) / 2;
+          setPlayerToEdit(prev => ({
+            ...prev!,
+            scoutRecommendation: roundedAverage
+          }));
+        } else {
+          // If no non-zero recommendations, set to 0
+          setPlayerToEdit(prev => ({
+            ...prev!,
+            scoutRecommendation: 0
+          }));
+        }
+      }
+    }
+  };
+
+  // Function to convert EditablePlayer back to Player format
+  const editableToPlayer = (editablePlayer: EditablePlayer): Player => {
+    // For Supabase compatibility, convert arrays to comma-separated strings
+    return {
+      ...editablePlayer,
+      tags: Array.isArray(editablePlayer.tags) ? editablePlayer.tags.join(', ') : editablePlayer.tags,
+      status: Array.isArray(editablePlayer.status) ? editablePlayer.status.join(', ') : editablePlayer.status
+    } as unknown as Player;
+  };
+
+  // Function to open edit dialog
+  const openEditDialog = (player: Player) => {
+    try {
+      // Convert player to editable format
+      const editablePlayer = playerToEditable(player);
+      
+      setPlayerToEdit(editablePlayer);
+      setTagsInput(Array.isArray(editablePlayer.tags) ? editablePlayer.tags.join(', ') : '');
+      setStatusInput(Array.isArray(editablePlayer.status) ? editablePlayer.status.join(', ') : '');
+      setIsAdditionalInfoOpen(false); // Ensure additional info is collapsed when opening dialog
+      setIsEditDialogOpen(true);
+    } catch (error) {
+      console.error('Error opening edit dialog:', error);
+      alert('There was an error opening the edit dialog. Please try again.');
+    }
+  };
+  
+  // Function to close edit dialog
+  const closeEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setPlayerToEdit(null);
+  };
+  
+  // Function to handle player property changes
+  const handlePlayerChange = (property: keyof EditablePlayer, value: any) => {
+    if (playerToEdit) {
+      setPlayerToEdit({
+        ...playerToEdit,
+        [property]: value
+      });
+    }
+  };
+  
+  // Function to handle tags input
+  const handleTagsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagsInput(e.target.value);
+    if (playerToEdit) {
+      const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
+      setPlayerToEdit({
+        ...playerToEdit,
+        tags
+      });
+    }
+  };
+  
+  // Function to handle status input
+  const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStatusInput(e.target.value);
+    if (playerToEdit) {
+      const status = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+      setPlayerToEdit({
+        ...playerToEdit,
+        status
+      });
+    }
+  };
+  
+  // Function to save player changes
+  const savePlayerChanges = () => {
+    if (playerToEdit && onPlayerUpdate) {
+      // Convert back to player format expected by parent
+      const updatedPlayer = editableToPlayer(playerToEdit);
+      onPlayerUpdate(updatedPlayer);
+    }
+    closeEditDialog();
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and dropdown filters */}
@@ -683,7 +884,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
-          <button
+          {/* <button
             className="btn btn-blue flex items-center gap-2 hover:bg-blue-600 transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -698,7 +899,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
             className="hidden"
             onChange={handleExcelUpload}
             ref={fileInputRef}
-          />
+          /> */}
           <button
             className="btn btn-green flex items-center gap-2 hover:bg-green-600 transition-colors"
             onClick={handleExcelDownload}
@@ -726,7 +927,11 @@ const PlayerList: React.FC<PlayerListProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {filteredPlayers.map((player) => (
-            <tr key={player.id} className="hover:bg-gray-50">
+            <tr 
+              key={player.id} 
+              className="hover:bg-gray-50 cursor-pointer" 
+              onDoubleClick={() => openEditDialog(player)}
+            >
               <td className="px-2 py-2 w-[15%]">
                 <div className="font-medium text-gray-900 break-words">{player.name}</div>
               </td>
@@ -796,13 +1001,344 @@ const PlayerList: React.FC<PlayerListProps> = ({
                   })()}
                 </div>
               </td>
-              <td className="px-2 py-2 w-[13%]">
+              <td className="px-2 py-2 w-[16%]">
                 <StarRating rating={player.scoutRecommendation || 0} size="sm" />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      
+      {/* Edit Player Dialog */}
+      {isEditDialogOpen && playerToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Player</h2>
+              <button 
+                onClick={closeEditDialog}
+                className="text-gray-500 hover:text-gray-700"
+                disabled={isSaving}
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Main fields */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={playerToEdit.name}
+                    onChange={(e) => handlePlayerChange('name', e.target.value)}
+                    className="input w-full"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                    <select
+                      value={playerToEdit.position}
+                      onChange={(e) => handlePlayerChange('position', e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="GK">GK</option>
+                      <option value="LB">LB</option>
+                      <option value="LCB">LCB</option>
+                      <option value="RCB">RCB</option>
+                      <option value="RB">RB</option>
+                      <option value="CDM">CDM</option>
+                      <option value="CM">CM</option>
+                      <option value="LM">LM</option>
+                      <option value="CAM">CAM</option>
+                      <option value="RM">RM</option>
+                      <option value="ST">ST</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                  
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {statusOptions.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => {
+                          // Toggle the status in the array
+                          if (!playerToEdit) return;
+                          const currentStatuses = [...playerToEdit.status];
+                          const index = currentStatuses.indexOf(status);
+                          
+                          if (index >= 0) {
+                            // Remove status if already selected
+                            currentStatuses.splice(index, 1);
+                          } else {
+                            // Add status if not selected
+                            currentStatuses.push(status);
+                          }
+                          
+                          // Update player status
+                          setPlayerToEdit({
+                            ...playerToEdit,
+                            status: currentStatuses
+                          });
+                          
+                          // Update status input for compatibility
+                          setStatusInput(currentStatuses.join(', '));
+                        }}
+                        className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                          playerToEdit.status.includes(status)
+                            ? getStatusButtonColor(status)
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-1">
+                    {playerToEdit.status.length > 0 ? (
+                      playerToEdit.status.map((status) => (
+                        <span
+                          key={status}
+                          className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status)}`}
+                        >
+                          {status}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-500">No status selected</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Scout Recommendations Section */}
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-gray-700 mb-3">Scout Recommendations</h3>
+                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                  {/* Summary of recommendations */}
+                  <div className="border-b border-gray-200 pb-3 mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-gray-700">Scout Recommendation</span>
+                      <div className="flex items-center">
+                        <span className="text-lg font-bold text-blue-600 mr-2">
+                          {playerToEdit.scoutRecommendation?.toFixed(1) || "0.0"}
+                        </span>
+                        <StarRating rating={playerToEdit.scoutRecommendation || 0} size="md" />
+                      </div>
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${getRatingColorClass(playerToEdit.scoutRecommendation || 0)}`}
+                        style={{ width: `${((playerToEdit.scoutRecommendation || 0) / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Poor</span>
+                      <span>Average</span>
+                      <span>Excellent</span>
+                    </div>
+                  </div>
+                  
+                  {/* Individual scout ratings */}
+                  {(playerToEdit.recommendations || []).map((rec, index) => (
+                    <div key={rec.scoutName} className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">{rec.scoutName}</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600 min-w-[2rem] text-right">
+                            {rec.recommendationValue.toFixed(1)}
+                          </span>
+                          <StarRating 
+                            rating={rec.recommendationValue} 
+                            size="sm" 
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.5"
+                          value={rec.recommendationValue}
+                          onChange={(e) => handleScoutRecommendationChange(rec.scoutName, parseFloat(e.target.value))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 w-24">
+                          <span>0</span>
+                          <span>2.5</span>
+                          <span>5</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                        <div 
+                          className={`h-1.5 rounded-full ${getRatingColorClass(rec.recommendationValue)}`}
+                          style={{ width: `${(rec.recommendationValue / 5) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Tags section moved below scout recommendations */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={tagsInput}
+                  onChange={handleTagsInputChange}
+                  className="input w-full"
+                  placeholder="E.g. Fast, Technical, Leader"
+                />
+              </div>
+              
+              {/* Additional fields - Collapsible */}
+              <div className="mt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsAdditionalInfoOpen(!isAdditionalInfoOpen)}
+                  className="flex w-full items-center justify-between text-md font-semibold mb-2 text-gray-700 hover:text-gray-900"
+                >
+                  <span>Additional Information</span>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className={`h-5 w-5 transform transition-transform ${isAdditionalInfoOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {isAdditionalInfoOpen && (
+                  <div className="grid grid-cols-2 gap-4 mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.age || ''}
+                        onChange={(e) => handlePlayerChange('age', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.height || ''}
+                        onChange={(e) => handlePlayerChange('height', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.weight || ''}
+                        onChange={(e) => handlePlayerChange('weight', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.experience || ''}
+                        onChange={(e) => handlePlayerChange('experience', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Domisili</label>
+                      <input
+                        type="text"
+                        value={playerToEdit.domisili || ''}
+                        onChange={(e) => handlePlayerChange('domisili', e.target.value)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
+                      <input
+                        type="text"
+                        value={playerToEdit.jurusan || ''}
+                        onChange={(e) => handlePlayerChange('jurusan', e.target.value)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Foot</label>
+                      <select
+                        value={playerToEdit.foot || ''}
+                        onChange={(e) => handlePlayerChange('foot', e.target.value)}
+                        className="input w-full"
+                      >
+                        <option value="">Select foot</option>
+                        <option value="Kiri">Kiri</option>
+                        <option value="Kanan">Kanan</option>
+                        <option value="Keduanya">Keduanya</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={closeEditDialog}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={savePlayerChanges}
+                className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 ${
+                  isSaving ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

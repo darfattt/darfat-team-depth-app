@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import PlayerList from './components/PlayerList'
 import FormationDisplay from './components/FormationDisplay'
 import { Player } from './types'
-import { loadSamplePlayers } from './utils/sampleData'
+import { loadSamplePlayers, updatePlayer } from './utils/sampleData'
 import { 
   SwatchIcon
 } from '@heroicons/react/24/outline'
@@ -23,11 +23,24 @@ export interface Filters {
   tagFilters?: string[];
 }
 
+// Helper function to ensure tags/status is always an array
+const ensureArrayField = (field: any): string[] => {
+  if (!field) return [];
+  if (Array.isArray(field)) return field;
+  if (typeof field === 'string') {
+    // Handle comma-separated string format from Excel or Supabase
+    return field.split(',').map(item => item.trim()).filter(Boolean);
+  }
+  return [];
+};
+
 function App() {
   const [players, setPlayers] = useState<Player[]>([])
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([])
   const [formationPlayers, setFormationPlayers] = useState<Player[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [updateMessage, setUpdateMessage] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'list' | 'formation'>('list')
   const [teamColor, setTeamColor] = useState<TeamColor>('green')
   const [filters, setFilters] = useState<Filters>({
@@ -44,17 +57,66 @@ function App() {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        const samplePlayers = await loadSamplePlayers()
-        setPlayers(samplePlayers)
+        setIsLoading(true);
+        const samplePlayers = await loadSamplePlayers();
+        setPlayers(samplePlayers);
       } catch (error) {
-        console.error('Failed to load sample players:', error)
+        console.error('Failed to load sample players:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    initializeData()
-  }, [])
+    initializeData();
+  }, []);
+
+  // Handle player update
+  const handlePlayerUpdate = async (updatedPlayer: Player) => {
+    try {
+      // Show saving state
+      setIsSaving(true);
+      
+      // Update local state immediately for UI responsiveness
+      const localUpdatedPlayers = players.map(player => 
+        player.id === updatedPlayer.id ? updatedPlayer : player
+      );
+      setPlayers(localUpdatedPlayers);
+      
+      // Ensure recommendations is maintained
+      if (!updatedPlayer.recommendations) {
+        updatedPlayer.recommendations = []; // Initialize if not present
+      }
+      
+      // Persist data to storage
+      const result = await updatePlayer(updatedPlayer);
+      
+      // If server update was successful, update message
+      setUpdateMessage('Player updated successfully');
+      
+      // If the server returned updated players, sync with those
+      if (result && result.length > 0) {
+        setPlayers(result);
+      }
+      
+      // Show notification
+      const notification = document.getElementById('update-notification');
+      if (notification) {
+        notification.classList.remove('hidden');
+        notification.classList.add('flex');
+        
+        // Hide notification after 3 seconds
+        setTimeout(() => {
+          notification.classList.add('hidden');
+          notification.classList.remove('flex');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error updating player:', error);
+      setUpdateMessage('Failed to update player');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // This effect updates filteredPlayers whenever filters change
   useEffect(() => {
@@ -68,7 +130,7 @@ function App() {
     
     if (filters.statusArray.length > 0) {
       result = result.filter(player => {
-        const playerStatus = Array.isArray(player.status) ? player.status : [player.status];
+        const playerStatus = ensureArrayField(player.status);
         return filters.statusArray.some(status => playerStatus.includes(status));
       });
     }
@@ -99,7 +161,7 @@ function App() {
     // Apply tag filters
     if (filters.tagFilters && filters.tagFilters.length > 0) {
       result = result.filter(player => {
-        const playerTags = Array.isArray(player.tags) ? player.tags : (player.tags ? [player.tags] : []);
+        const playerTags = ensureArrayField(player.tags);
         return filters.tagFilters!.some(filterTag => 
           playerTags.some(playerTag => 
             playerTag.toLowerCase().includes(filterTag.toLowerCase())
@@ -195,7 +257,9 @@ function App() {
                 <PlayerList 
                   players={players} 
                   filters={filters} 
-                  onFilterChange={handleFilterChange} 
+                  onFilterChange={handleFilterChange}
+                  onPlayerUpdate={handlePlayerUpdate}
+                  isSaving={isSaving}
                 />
                 <div className="flex justify-between items-center">
                   <div className="text-sm text-gray-500">
@@ -265,6 +329,17 @@ function App() {
           </>
         )}
       </main>
+
+      {/* Notification for successful update */}
+      <div 
+        id="update-notification" 
+        className="hidden fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg items-center space-x-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        </svg>
+        <span>{updateMessage || 'Player updated successfully'}</span>
+      </div>
 
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 text-center text-sm text-gray-500">
         © {new Date().getFullYear()} Expose Team Depth Chart
