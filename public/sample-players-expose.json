@@ -12,7 +12,7 @@
     "foot": "Kanan",
     "tags": ["Shot-stopper", "Commanding", "Reflexes", "Aerial presence"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 2,
@@ -27,7 +27,7 @@
     "foot": "Kanan",
     "tags": ["Agile", "One-on-one", "Distribution", "Player to Watch"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 3,
@@ -42,7 +42,7 @@
     "foot": "Keduanya",
     "tags": ["Ambidextrous", "Sweeper-keeper", "Reactions"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 4,
@@ -57,7 +57,7 @@
     "foot": "Kanan",
     "tags": ["Strong hands", "Positioning", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 5,
@@ -72,7 +72,7 @@
     "foot": "Keduanya",
     "tags": ["Versatile", "Ambidextrous", "HG product"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 6,
@@ -87,7 +87,7 @@
     "foot": "Kanan",
     "tags": ["Strong tackle", "Aerial dominance", "Composed", "HG potential"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 7,
@@ -102,7 +102,7 @@
     "foot": "Kanan",
     "tags": ["Experienced", "Leadership", "Physical"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 8,
@@ -117,7 +117,7 @@
     "foot": "Keduanya",
     "tags": ["Ball-playing", "Versatile", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 9,
@@ -132,7 +132,7 @@
     "foot": "Keduanya",
     "tags": ["Young talent", "Technical", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 10,
@@ -147,7 +147,7 @@
     "foot": "Kanan",
     "tags": ["Defensive awareness", "Strength", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 11,
@@ -162,7 +162,7 @@
     "foot": "Kanan",
     "tags": ["Tackling", "Work rate", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 12,
@@ -177,7 +177,7 @@
     "foot": "Kanan",
     "tags": ["Defensive discipline", "Positioning"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 13,
@@ -192,7 +192,7 @@
     "foot": "Kanan",
     "tags": ["Defensive shield", "Interceptions", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 14,
@@ -207,7 +207,7 @@
     "foot": "Kanan",
     "tags": ["Versatile", "Physical", "Give a chance"],
     "status": ["Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 15,
@@ -222,7 +222,7 @@
     "foot": "Kanan",
     "tags": ["Box-to-box", "Work rate", "Passing range", "HG product"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.5
   },
   {
     "id": 16,
@@ -237,7 +237,7 @@
     "foot": "Kanan",
     "tags": ["Defensive solidity", "Strength", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 17,
@@ -252,7 +252,7 @@
     "foot": "Kanan",
     "tags": ["Composure", "Give a chance", "HG potential"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 18,
@@ -267,7 +267,7 @@
     "foot": "Kanan",
     "tags": ["Defensive cover", "Tackling", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 19,
@@ -282,7 +282,7 @@
     "foot": "Kanan",
     "tags": ["Versatile defender", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 20,
@@ -297,7 +297,7 @@
     "foot": "Kanan",
     "tags": ["Existing Player", "Player to Watch", "Consistent"],
     "status": ["Existing Player", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 21,
@@ -312,7 +312,7 @@
     "foot": "Kanan",
     "tags": ["Physical", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 22,
@@ -327,7 +327,7 @@
     "foot": "Kanan",
     "tags": ["Defensive awareness", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 23,
@@ -342,7 +342,7 @@
     "foot": "Kanan",
     "tags": ["Strong in duels", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 24,
@@ -357,7 +357,7 @@
     "foot": "Kanan",
     "tags": ["Versatile", "HG product", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 25,
@@ -372,7 +372,7 @@
     "foot": "Kanan",
     "tags": ["Defensive cover", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 26,
@@ -387,7 +387,7 @@
     "foot": "Keduanya",
     "tags": ["Ultra-versatile", "Ambidextrous", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 27,
@@ -402,7 +402,7 @@
     "foot": "Keduanya",
     "tags": ["Unconventional", "Ambidextrous", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 28,
@@ -417,7 +417,7 @@
     "foot": "Kanan",
     "tags": ["Overlapping runs", "Crossing", "Stamina", "Player to Watch"],
     "status": ["HG", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 29,
@@ -432,7 +432,7 @@
     "foot": "Keduanya",
     "tags": ["Defensive shield", "Ambidextrous", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 30,
@@ -447,7 +447,7 @@
     "foot": "Kanan",
     "tags": ["Fullback", "Energy", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 31,
@@ -462,7 +462,7 @@
     "foot": "Kanan",
     "tags": ["Defensive work", "Give a chance", "HG potential"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 32,
@@ -477,7 +477,7 @@
     "foot": "Kanan",
     "tags": ["Pace", "Defensive cover", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 33,
@@ -492,7 +492,7 @@
     "foot": "Kanan",
     "tags": ["Fullback", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.0
   },
   {
     "id": 34,
@@ -507,7 +507,7 @@
     "foot": "Kanan",
     "tags": ["Defensive work", "HG product", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 35,
@@ -522,7 +522,7 @@
     "foot": "Kanan",
     "tags": ["Ultra-versatile", "Wing play", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 36,
@@ -537,7 +537,7 @@
     "foot": "Keduanya",
     "tags": ["Complete wingback", "Ambidextrous", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 37,
@@ -552,7 +552,7 @@
     "foot": "Keduanya",
     "tags": ["Defensive solidity", "Ambidextrous", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 38,
@@ -567,7 +567,7 @@
     "foot": "Keduanya",
     "tags": ["Attacking fullback", "Creativity", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 39,
@@ -582,7 +582,7 @@
     "foot": "Keduanya",
     "tags": ["Unconventional", "Ambidextrous", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 40,
@@ -597,7 +597,7 @@
     "foot": "Kanan",
     "tags": ["Attacking mid", "Vision", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 41,
@@ -612,7 +612,7 @@
     "foot": "Kanan",
     "tags": ["Winger", "Scout recommended"],
     "status": [],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 3.5
   },
   {
     "id": 42,
@@ -627,7 +627,7 @@
     "foot": "Kanan",
     "tags": ["Versatile attacker", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 43,
@@ -642,7 +642,7 @@
     "foot": "Keduanya",
     "tags": ["Central playmaker", "Ambidextrous", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 44,
@@ -657,7 +657,7 @@
     "foot": "Kanan",
     "tags": ["Box-to-box", "Work rate", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 45,
@@ -672,7 +672,7 @@
     "foot": "Kanan",
     "tags": ["Ball winner", "Positioning", "Interceptions", "Player to Watch"],
     "status": ["HG", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 46,
@@ -687,7 +687,7 @@
     "foot": "Kanan",
     "tags": ["Creative mid", "Existing Player", "Player to Watch"],
     "status": ["HG", "Existing Player", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 47,
@@ -702,7 +702,7 @@
     "foot": "Keduanya",
     "tags": ["Defensive mid", "Ambidextrous", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 48,
@@ -717,7 +717,7 @@
     "foot": "Kanan",
     "tags": ["Central mid", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 49,
@@ -732,7 +732,7 @@
     "foot": "Kanan",
     "tags": ["Playmaker", "Vision", "Through balls", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 50,
@@ -747,7 +747,7 @@
     "foot": "Kanan",
     "tags": ["Attacking mid", "Versatile", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 51,
@@ -762,7 +762,7 @@
     "foot": "Keduanya",
     "tags": ["Complete midfielder", "Existing Player", "Player to Watch"],
     "status": ["Existing Player", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 52,
@@ -777,7 +777,7 @@
     "foot": "Kanan",
     "tags": ["Defensive anchor", "Existing Player", "Player to Watch"],
     "status": ["HG", "Existing Player", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 53,
@@ -792,7 +792,7 @@
     "foot": "Kanan",
     "tags": ["Attacking mid", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 2.5
   },
   {
     "id": 54,
@@ -807,7 +807,7 @@
     "foot": "Kanan",
     "tags": ["Clinical finisher", "Movement", "Hold-up play", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 55,
@@ -822,7 +822,7 @@
     "foot": "Kanan",
     "tags": ["Creative", "Playmaking", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 56,
@@ -837,7 +837,7 @@
     "foot": "Kanan",
     "tags": ["Attacking mid", "Wide play", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 57,
@@ -852,7 +852,7 @@
     "foot": "Kanan",
     "tags": ["Wide attacker", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 58,
@@ -867,7 +867,7 @@
     "foot": "Keduanya",
     "tags": ["Versatile attacker", "Ambidextrous", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 59,
@@ -882,7 +882,7 @@
     "foot": "Kanan",
     "tags": ["Striker", "Player to Watch"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 60,
@@ -897,7 +897,7 @@
     "foot": "Kanan",
     "tags": ["Winger", "Finishing", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 61,
@@ -912,7 +912,7 @@
     "foot": "Kiri",
     "tags": ["Left-footed", "Winger", "Cut inside", "Speed"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 62,
@@ -927,7 +927,7 @@
     "foot": "Keduanya",
     "tags": ["Versatile winger", "Ambidextrous", "Player to Watch"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 63,
@@ -942,7 +942,7 @@
     "foot": "Keduanya",
     "tags": ["Wide playmaker", "Ambidextrous", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 64,
@@ -957,7 +957,7 @@
     "foot": "Kanan",
     "tags": ["Traditional winger", "Crossing", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 65,
@@ -972,7 +972,7 @@
     "foot": "Kanan",
     "tags": ["Winger", "Technical", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 66,
@@ -987,7 +987,7 @@
     "foot": "Keduanya",
     "tags": ["Versatile winger", "Ambidextrous", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 67,
@@ -1002,7 +1002,7 @@
     "foot": "Kanan",
     "tags": ["Winger", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 3.5
   },
   {
     "id": 68,
@@ -1017,7 +1017,7 @@
     "foot": "Kanan",
     "tags": ["Traditional winger", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 69,
@@ -1032,7 +1032,7 @@
     "foot": "Kanan",
     "tags": ["Inverted winger", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 70,
@@ -1047,7 +1047,7 @@
     "foot": "Kanan",
     "tags": ["Striker", "Give a chance", "HG potential"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 71,
@@ -1062,7 +1062,7 @@
     "foot": "Kiri",
     "tags": ["Left-footed", "Existing Player", "Player to Watch"],
     "status": ["Existing Player", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 72,
@@ -1077,7 +1077,7 @@
     "foot": "Kiri",
     "tags": ["Left-footed", "Winger", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 73,
@@ -1092,7 +1092,7 @@
     "foot": "Kanan",
     "tags": ["Complete forward", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 74,
@@ -1107,7 +1107,7 @@
     "foot": "Keduanya",
     "tags": ["Versatile", "Dribbling", "Creativity", "Existing Player"],
     "status": ["HG", "Existing Player", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.5
   },
   {
     "id": 75,
@@ -1122,7 +1122,7 @@
     "foot": "Kanan",
     "tags": ["Target man", "Strength", "Finishing", "Give a chance"],
     "status": ["HG", "Give a chance"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 76,
@@ -1137,7 +1137,7 @@
     "foot": "Keduanya",
     "tags": ["Versatile forward", "Ambidextrous", "Unknown potential"],
     "status": ["Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   },
   {
     "id": 77,
@@ -1152,7 +1152,7 @@
     "foot": null,
     "tags": ["Goalkeeper", "Player to Watch"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 78,
@@ -1167,7 +1167,7 @@
     "foot": "Kanan",
     "tags": ["Striker", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 79,
@@ -1182,7 +1182,7 @@
     "foot": "Kanan",
     "tags": ["Versatile fullback", "Defensive solidity", "Crossing"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 80,
@@ -1197,7 +1197,7 @@
     "foot": "Kanan",
     "tags": ["Defensive mid", "Scout recommended"],
     "status": ["HG"],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 4.0
   },
   {
     "id": 81,
@@ -1212,7 +1212,7 @@
     "foot": "Keduanya",
     "tags": ["Creative mid", "Ambidextrous", "Player to Watch"],
     "status": ["HG", "Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 82,
@@ -1227,7 +1227,7 @@
     "foot": "Kanan",
     "tags": ["Defensive mid", "Scout recommended"],
     "status": [],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 3.5
   },
   {
     "id": 83,
@@ -1242,7 +1242,7 @@
     "foot": "Kanan",
     "tags": ["Central mid", "Scout recommended"],
     "status": [],
-    "scoutRecommendation": 3
+    "scoutRecommendation": 3.5
   },
   {
     "id": 84,
@@ -1257,7 +1257,7 @@
     "foot": "Keduanya",
     "tags": ["Creative", "Set-piece specialist", "Ambidextrous", "Player to Watch"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 4.0
   },
   {
     "id": 85,
@@ -1272,7 +1272,7 @@
     "foot": "Keduanya",
     "tags": ["Fullback", "Versatile", "Player to Watch"],
     "status": ["Player to Watch"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.5
   },
   {
     "id": 86,
@@ -1287,6 +1287,6 @@
     "foot": "Kanan",
     "tags": ["Fullback", "Technical", "Unknown potential"],
     "status": ["HG", "Unknown"],
-    "scoutRecommendation": 0
+    "scoutRecommendation": 3.0
   }
 ]

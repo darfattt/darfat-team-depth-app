@@ -132,13 +132,13 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
 
     // Calculate how many groups we can form
     // The limiting factor is the position with fewest players relative to how many we need per group
-    const defenderGroups = Math.floor(defenders.length / defenderRatio);
-    const midfielderGroups = Math.floor(midfielders.length / midfielderRatio);
-    const forwardGroups = Math.floor(forwards.length / forwardRatio);
+    // const defenderGroups = Math.floor(defenders.length / defenderRatio);
+    // const midfielderGroups = Math.floor(midfielders.length / midfielderRatio);
+    // const forwardGroups = Math.floor(forwards.length / forwardRatio);
     
     // Calculate initial number of groups
-    let possibleGroups = Math.min(defenderGroups, midfielderGroups, forwardGroups);
-    
+    let possibleGroups = Math.floor((defenders.length+midfielders.length +forwards.length)/playersPerGroup);
+    console.log({possibleGroups});
     if (possibleGroups === 0) {
       setGroups([]);
       return;
@@ -161,9 +161,70 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
           minIndex = i;
         }
       }
-      
       return minIndex;
     };
+
+    const findLeastPopulatedOrLowestRatedGroupIndex = () => {
+      // Find groups with minimum number of players first
+      let minCount = Number.MAX_SAFE_INTEGER;
+      let groupsWithMinCount = [];
+      
+      // Step 1: Find the minimum count
+      for (let i = 0; i < newGroups.length; i++) {
+        if (newGroups[i].length < minCount) {
+          minCount = newGroups[i].length;
+        }
+      }
+      
+      // Step 2: Collect all groups with that minimum count
+      for (let i = 0; i < newGroups.length; i++) {
+        if (newGroups[i].length === minCount) {
+          groupsWithMinCount.push(i);
+        }
+      }
+      
+      // If there's only one group with minimum count, return it
+      if (groupsWithMinCount.length === 1) {
+        console.log(newGroups[groupsWithMinCount[0]]);
+        return groupsWithMinCount[0];
+      }
+      
+      // Step 3: Among tied groups, find the one with lowest average rating
+      let lowestAvgRatingIndex = groupsWithMinCount[0];
+      let lowestAvgRating = calculateAverageRating(newGroups[lowestAvgRatingIndex]);
+      
+      for (let i = 1; i < groupsWithMinCount.length; i++) {
+        const currentIndex = groupsWithMinCount[i];
+        const currentAvgRating = calculateAverageRating(newGroups[currentIndex]);
+        
+        if (currentAvgRating < lowestAvgRating) {
+          lowestAvgRating = currentAvgRating;
+          lowestAvgRatingIndex = currentIndex;
+        }
+      }
+      
+      console.log(newGroups[lowestAvgRatingIndex]);
+      return lowestAvgRatingIndex;
+    };
+    
+    // Helper function to calculate average rating of a group
+    const calculateAverageRating = (group: GroupedPlayer[]) => {
+      if (group.length === 0) return 0;
+      
+      let totalRating = 0;
+      let validRatings = 0;
+      
+      for (const player of group) {
+        // Check if the player object has a rating property
+        if (player && player.rating) {
+          totalRating += player.rating;
+          validRatings++;
+        }
+      }
+      
+      return validRatings > 0 ? totalRating / validRatings : 0;
+    };
+
     
     // Helper function to check if we need to create a new group
     const shouldCreateNewGroup = (playerType: GroupedPlayer[]) => {
@@ -195,12 +256,12 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       
       for (let i = 0; i < positionRatio * possibleGroups; i++) {
         if (players.length === 0) break;
-        //if (!newGroups[groupIndex] ){continue;}
+
+        if (!newGroups[groupIndex] ){continue;}
         // Check if current group is at max capacity
-        if (newGroups[groupIndex] && newGroups[groupIndex].length >= maxPlayersPerGroup) {
+        if (newGroups[groupIndex].length >= maxPlayersPerGroup) {
           // Find the group with the least players
-          const leastGroupIndex = findLeastPopulatedGroupIndex();
-          
+          const leastGroupIndex = findLeastPopulatedOrLowestRatedGroupIndex(); // orig findLeastPopulatedGroupIndex
           // If all groups are at max capacity, create a new group
           if (newGroups[leastGroupIndex].length >= maxPlayersPerGroup && shouldCreateNewGroup(players)) {
             groupIndex = addNewGroup();
@@ -208,10 +269,10 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
             groupIndex = leastGroupIndex;
           }
         }
-        if(newGroups[groupIndex]){
-          newGroups[groupIndex].push(players.shift()!);
-        }
         
+        newGroups[groupIndex].push(players.shift()!);
+        
+      
         // Move to next group using snake draft pattern
         groupIndex += dir;
         
@@ -251,9 +312,11 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     };
     
     // Distribute players
+    
     distributeDefenders();
     distributeMidfielders();
     distributeForwards();
+
     
     // Set the final groups
     setGroups(newGroups);
