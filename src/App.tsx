@@ -82,6 +82,11 @@ function App() {
       );
       setPlayers(localUpdatedPlayers);
       
+      // Ensure recommendations is maintained
+      if (!updatedPlayer.recommendations) {
+        updatedPlayer.recommendations = []; // Initialize if not present
+      }
+      
       // Persist data to storage
       const result = await updatePlayer(updatedPlayer);
       

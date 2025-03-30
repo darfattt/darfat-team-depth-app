@@ -12,6 +12,12 @@ export interface Player {
   tags: string[];
   status: string;
   scoutRecommendation?: number;  // Rating from 0-5, can include decimals like 3.5
+  recommendations?: ScoutRecommendation[];  // Multiple scout recommendations
+}
+
+export interface ScoutRecommendation {
+  scoutName: string;
+  recommendationValue: number;  // Rating from 0-5, can include decimals like 1.0, 2.0
 }
 
 export interface Team {

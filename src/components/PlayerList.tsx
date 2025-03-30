@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Player } from '../types'
+import { Player, ScoutRecommendation } from '../types'
 import * as XLSX from 'xlsx'
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { parseExcelData, generateExcelFile } from '../utils/excelGenerator'
@@ -13,6 +13,7 @@ interface EditablePlayer {
   tags: string[];
   status: string[];
   scoutRecommendation?: number;
+  recommendations?: ScoutRecommendation[];
   foot?: string;
   domisili?: string;
   jurusan?: string;
@@ -490,13 +491,95 @@ const PlayerList: React.FC<PlayerListProps> = ({
 
   // Function to convert Player to EditablePlayer
   const playerToEditable = (player: Player): EditablePlayer => {
+    // Create default recommendations if they don't exist
+    const defaultRecommendations: ScoutRecommendation[] = [
+      { scoutName: "Darfat", recommendationValue: 0 },
+      { scoutName: "Badru", recommendationValue: 0 },
+      { scoutName: "Handrian", recommendationValue: 0 },
+      { scoutName: "Hendrian", recommendationValue: 0 },
+      { scoutName: "Fadzri", recommendationValue: 0 },
+      { scoutName: "Hendra DP", recommendationValue: 0 },
+      { scoutName: "Scout 7", recommendationValue: 0 },
+      { scoutName: "Scout 8", recommendationValue: 0 }
+    ];
+
+    // Merge existing recommendations with default ones
+    const mergedRecommendations = player.recommendations
+      ? [...player.recommendations]
+      : [];
+    
+    // Ensure all default scouts exist in the recommendations
+    defaultRecommendations.forEach(defaultRec => {
+      if (!mergedRecommendations.some(rec => rec.scoutName === defaultRec.scoutName)) {
+        mergedRecommendations.push(defaultRec);
+      }
+    });
+
     return {
       ...player,
       // Ensure tags is always an array
       tags: ensureArrayField(player.tags),
       // Ensure status is always an array
-      status: ensureArrayField(player.status)
+      status: ensureArrayField(player.status),
+      // Add recommendations
+      recommendations: mergedRecommendations
     };
+  };
+
+  // Function to get color class based on rating value
+  const getRatingColorClass = (rating: number): string => {
+    if (rating >= 4) return 'bg-green-500'; // Excellent
+    if (rating >= 3) return 'bg-blue-500';  // Good
+    if (rating >= 2) return 'bg-yellow-500'; // Average
+    if (rating >= 1) return 'bg-orange-500'; // Below average
+    return 'bg-red-500'; // Poor
+  };
+
+  // Function to handle scout recommendation change
+  const handleScoutRecommendationChange = (scoutName: string, value: number) => {
+    if (playerToEdit) {
+      // Round to nearest 0.5 if needed
+      const roundedValue = Math.round(value * 2) / 2;
+      
+      const recommendations = playerToEdit.recommendations || [];
+      const updatedRecommendations = [...recommendations];
+      
+      // Find existing recommendation or add new one
+      const existingIndex = updatedRecommendations.findIndex(rec => rec.scoutName === scoutName);
+      if (existingIndex >= 0) {
+        updatedRecommendations[existingIndex].recommendationValue = roundedValue;
+      } else {
+        updatedRecommendations.push({ scoutName, recommendationValue: roundedValue });
+      }
+      
+      // Update player with new recommendations
+      setPlayerToEdit({
+        ...playerToEdit,
+        recommendations: updatedRecommendations
+      });
+
+      // Calculate average for the scout recommendation field
+      if (updatedRecommendations.length > 0) {
+        // Only include non-zero recommendations in the average
+        const nonZeroRecs = updatedRecommendations.filter(rec => rec.recommendationValue > 0);
+        if (nonZeroRecs.length > 0) {
+          const sum = nonZeroRecs.reduce((total, rec) => total + rec.recommendationValue, 0);
+          const average = sum / nonZeroRecs.length;
+          // Round to nearest 0.5
+          const roundedAverage = Math.round(average * 2) / 2;
+          setPlayerToEdit(prev => ({
+            ...prev!,
+            scoutRecommendation: roundedAverage
+          }));
+        } else {
+          // If no non-zero recommendations, set to 0
+          setPlayerToEdit(prev => ({
+            ...prev!,
+            scoutRecommendation: 0
+          }));
+        }
+      }
+    }
   };
 
   // Function to convert EditablePlayer back to Player format
@@ -801,7 +884,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
-          <button
+          {/* <button
             className="btn btn-blue flex items-center gap-2 hover:bg-blue-600 transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -816,7 +899,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
             className="hidden"
             onChange={handleExcelUpload}
             ref={fileInputRef}
-          />
+          /> */}
           <button
             className="btn btn-green flex items-center gap-2 hover:bg-green-600 transition-colors"
             onClick={handleExcelDownload}
@@ -977,10 +1060,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Scout Rating </label>
-                    <div className="py-2">
-                      <StarRating rating={playerToEdit.scoutRecommendation || 0} size="md" />
-                    </div>
+                  
                   </div>
                 </div>
                 
@@ -1008,6 +1088,78 @@ const PlayerList: React.FC<PlayerListProps> = ({
                     className="input w-full"
                     placeholder="E.g. HG, Player To Watch"
                   />
+                </div>
+              </div>
+              
+              {/* Scout Recommendations Section */}
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-gray-700 mb-3">Scout Recommendations</h3>
+                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                  {/* Summary of recommendations */}
+                  <div className="border-b border-gray-200 pb-3 mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-gray-700">Scout Recommendation</span>
+                      <div className="flex items-center">
+                        <span className="text-lg font-bold text-blue-600 mr-2">
+                          {playerToEdit.scoutRecommendation?.toFixed(1) || "0.0"}
+                        </span>
+                        <StarRating rating={playerToEdit.scoutRecommendation || 0} size="md" />
+                      </div>
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${getRatingColorClass(playerToEdit.scoutRecommendation || 0)}`}
+                        style={{ width: `${((playerToEdit.scoutRecommendation || 0) / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Poor</span>
+                      <span>Average</span>
+                      <span>Excellent</span>
+                    </div>
+                  </div>
+                  
+                  {/* Individual scout ratings */}
+                  {(playerToEdit.recommendations || []).map((rec, index) => (
+                    <div key={rec.scoutName} className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">{rec.scoutName}</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-600 min-w-[2rem] text-right">
+                            {rec.recommendationValue.toFixed(1)}
+                          </span>
+                          <StarRating 
+                            rating={rec.recommendationValue} 
+                            size="sm" 
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.5"
+                          value={rec.recommendationValue}
+                          onChange={(e) => handleScoutRecommendationChange(rec.scoutName, parseFloat(e.target.value))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 w-24">
+                          <span>0</span>
+                          <span>2.5</span>
+                          <span>5</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                        <div 
+                          className={`h-1.5 rounded-full ${getRatingColorClass(rec.recommendationValue)}`}
+                          style={{ width: `${(rec.recommendationValue / 5) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               

@@ -23,6 +23,13 @@ const prepareForSupabase = (player: Player): any => {
     supabasePlayer.status = supabasePlayer.status.join(', ');
   }
   
+  // Convert recommendations to JSON string if needed
+  // Supabase can handle JSON objects directly, but we'll ensure it's properly formatted
+  if (supabasePlayer.recommendations) {
+    // Ensure recommendations is stored as a JSON object, not a stringified version
+    supabasePlayer.recommendations = supabasePlayer.recommendations;
+  }
+  
   return supabasePlayer;
 };
 
@@ -50,6 +57,22 @@ const prepareFromSupabase = (player: any): Player => {
       .filter(Boolean);
   } else if (!normalizedPlayer.status) {
     normalizedPlayer.status = [];
+  }
+  
+  // Handle recommendations - ensure it's properly parsed from JSON if needed
+  if (normalizedPlayer.recommendations) {
+    // If recommendations is stored as a string, parse it
+    if (typeof normalizedPlayer.recommendations === 'string') {
+      try {
+        normalizedPlayer.recommendations = JSON.parse(normalizedPlayer.recommendations);
+      } catch (error) {
+        console.error('Error parsing recommendations JSON:', error);
+        normalizedPlayer.recommendations = [];
+      }
+    }
+  } else {
+    // Initialize empty recommendations array if not present
+    normalizedPlayer.recommendations = [];
   }
   
   return normalizedPlayer as Player;
