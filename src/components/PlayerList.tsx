@@ -1066,28 +1066,60 @@ const PlayerList: React.FC<PlayerListProps> = ({
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tags (comma separated)
+                    Status
                   </label>
-                  <input
-                    type="text"
-                    value={tagsInput}
-                    onChange={handleTagsInputChange}
-                    className="input w-full"
-                    placeholder="E.g. Fast, Technical, Leader"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status (comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={statusInput}
-                    onChange={handleStatusInputChange}
-                    className="input w-full"
-                    placeholder="E.g. HG, Player To Watch"
-                  />
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {statusOptions.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => {
+                          // Toggle the status in the array
+                          if (!playerToEdit) return;
+                          const currentStatuses = [...playerToEdit.status];
+                          const index = currentStatuses.indexOf(status);
+                          
+                          if (index >= 0) {
+                            // Remove status if already selected
+                            currentStatuses.splice(index, 1);
+                          } else {
+                            // Add status if not selected
+                            currentStatuses.push(status);
+                          }
+                          
+                          // Update player status
+                          setPlayerToEdit({
+                            ...playerToEdit,
+                            status: currentStatuses
+                          });
+                          
+                          // Update status input for compatibility
+                          setStatusInput(currentStatuses.join(', '));
+                        }}
+                        className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                          playerToEdit.status.includes(status)
+                            ? getStatusButtonColor(status)
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-1">
+                    {playerToEdit.status.length > 0 ? (
+                      playerToEdit.status.map((status) => (
+                        <span
+                          key={status}
+                          className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status)}`}
+                        >
+                          {status}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-500">No status selected</span>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -1161,6 +1193,20 @@ const PlayerList: React.FC<PlayerListProps> = ({
                     </div>
                   ))}
                 </div>
+              </div>
+              
+              {/* Tags section moved below scout recommendations */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={tagsInput}
+                  onChange={handleTagsInputChange}
+                  className="input w-full"
+                  placeholder="E.g. Fast, Technical, Leader"
+                />
               </div>
               
               {/* Additional fields - Collapsible */}
