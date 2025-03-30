@@ -5,6 +5,23 @@ import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/o
 import { parseExcelData, generateExcelFile } from '../utils/excelGenerator'
 import StarRating from './StarRating'
 
+// Add interfaces for the edit functionality
+interface EditablePlayer {
+  id: string | number;
+  name: string;
+  position: string;
+  tags: string[];
+  status: string[];
+  scoutRecommendation?: number;
+  foot?: string;
+  domisili?: string;
+  jurusan?: string;
+  age?: number;
+  height?: number;
+  weight?: number;
+  experience?: number;
+}
+
 interface PlayerListProps {
   players: Player[]
   filters: {
@@ -27,12 +44,15 @@ interface PlayerListProps {
     footFilters?: string[];
     tagFilters?: string[];
   }) => void
+  // Optional callback for player updates
+  onPlayerUpdate?: (updatedPlayer: Player) => void
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({ 
   players, 
   filters,
-  onFilterChange
+  onFilterChange,
+  onPlayerUpdate
 }) => {
   // Use initial values from props
   const [searchTerm, setSearchTerm] = useState(filters.search || '')
@@ -42,6 +62,13 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const [tagFilters, setTagFilters] = useState<string[]>(filters.tagFilters || [])
   const [statusFilter, setStatusFilter] = useState<string[]>(filters.statusArray || [])
   const [minRating, setMinRating] = useState<number>(filters.minRating || 0)
+  
+  // State for edit dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [playerToEdit, setPlayerToEdit] = useState<EditablePlayer | null>(null)
+  const [tagsInput, setTagsInput] = useState('')
+  const [statusInput, setStatusInput] = useState('')
+  const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false)
   
   const [sortField, setSortField] = useState<keyof Player>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -458,6 +485,84 @@ const PlayerList: React.FC<PlayerListProps> = ({
     setMinRating(value);
   };
 
+  // Function to convert Player to EditablePlayer
+  const playerToEditable = (player: Player): EditablePlayer => {
+    return {
+      ...player,
+      status: ensureArrayField(player.status)
+    };
+  };
+
+  // Function to convert EditablePlayer back to Player format
+  const editableToPlayer = (editablePlayer: EditablePlayer): Player => {
+    return {
+      ...editablePlayer,
+      status: editablePlayer.status.join(', ')
+    } as unknown as Player;
+  };
+
+  // Function to open edit dialog
+  const openEditDialog = (player: Player) => {
+    // Convert player to editable format
+    const editablePlayer = playerToEditable(player);
+    
+    setPlayerToEdit(editablePlayer);
+    setTagsInput(editablePlayer.tags.join(', '));
+    setStatusInput(editablePlayer.status.join(', '));
+    setIsAdditionalInfoOpen(false); // Ensure additional info is collapsed when opening dialog
+    setIsEditDialogOpen(true);
+  };
+  
+  // Function to close edit dialog
+  const closeEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setPlayerToEdit(null);
+  };
+  
+  // Function to handle player property changes
+  const handlePlayerChange = (property: keyof EditablePlayer, value: any) => {
+    if (playerToEdit) {
+      setPlayerToEdit({
+        ...playerToEdit,
+        [property]: value
+      });
+    }
+  };
+  
+  // Function to handle tags input
+  const handleTagsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagsInput(e.target.value);
+    if (playerToEdit) {
+      const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
+      setPlayerToEdit({
+        ...playerToEdit,
+        tags
+      });
+    }
+  };
+  
+  // Function to handle status input
+  const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStatusInput(e.target.value);
+    if (playerToEdit) {
+      const status = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+      setPlayerToEdit({
+        ...playerToEdit,
+        status
+      });
+    }
+  };
+  
+  // Function to save player changes
+  const savePlayerChanges = () => {
+    if (playerToEdit && onPlayerUpdate) {
+      // Convert back to player format expected by parent
+      const updatedPlayer = editableToPlayer(playerToEdit);
+      onPlayerUpdate(updatedPlayer);
+    }
+    closeEditDialog();
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and dropdown filters */}
@@ -726,7 +831,11 @@ const PlayerList: React.FC<PlayerListProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {filteredPlayers.map((player) => (
-            <tr key={player.id} className="hover:bg-gray-50">
+            <tr 
+              key={player.id} 
+              className="hover:bg-gray-50 cursor-pointer" 
+              onDoubleClick={() => openEditDialog(player)}
+            >
               <td className="px-2 py-2 w-[15%]">
                 <div className="font-medium text-gray-900 break-words">{player.name}</div>
               </td>
@@ -796,13 +905,214 @@ const PlayerList: React.FC<PlayerListProps> = ({
                   })()}
                 </div>
               </td>
-              <td className="px-2 py-2 w-[13%]">
+              <td className="px-2 py-2 w-[16%]">
                 <StarRating rating={player.scoutRecommendation || 0} size="sm" />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      
+      {/* Edit Player Dialog */}
+      {isEditDialogOpen && playerToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Player</h2>
+              <button 
+                onClick={closeEditDialog}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Main fields */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={playerToEdit.name}
+                    onChange={(e) => handlePlayerChange('name', e.target.value)}
+                    className="input w-full"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                    <select
+                      value={playerToEdit.position}
+                      onChange={(e) => handlePlayerChange('position', e.target.value)}
+                      className="input w-full"
+                    >
+                      <option value="GK">GK</option>
+                      <option value="LB">LB</option>
+                      <option value="LCB">LCB</option>
+                      <option value="RCB">RCB</option>
+                      <option value="RB">RB</option>
+                      <option value="CDM">CDM</option>
+                      <option value="CM">CM</option>
+                      <option value="LM">LM</option>
+                      <option value="CAM">CAM</option>
+                      <option value="RM">RM</option>
+                      <option value="ST">ST</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Scout Rating </label>
+                    <div className="py-2">
+                      <StarRating rating={playerToEdit.scoutRecommendation || 0} size="md" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tags (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={tagsInput}
+                    onChange={handleTagsInputChange}
+                    className="input w-full"
+                    placeholder="E.g. Fast, Technical, Leader"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={statusInput}
+                    onChange={handleStatusInputChange}
+                    className="input w-full"
+                    placeholder="E.g. HG, Player To Watch"
+                  />
+                </div>
+              </div>
+              
+              {/* Additional fields - Collapsible */}
+              <div className="mt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsAdditionalInfoOpen(!isAdditionalInfoOpen)}
+                  className="flex w-full items-center justify-between text-md font-semibold mb-2 text-gray-700 hover:text-gray-900"
+                >
+                  <span>Additional Information</span>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className={`h-5 w-5 transform transition-transform ${isAdditionalInfoOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {isAdditionalInfoOpen && (
+                  <div className="grid grid-cols-2 gap-4 mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.age || ''}
+                        onChange={(e) => handlePlayerChange('age', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.height || ''}
+                        onChange={(e) => handlePlayerChange('height', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.weight || ''}
+                        onChange={(e) => handlePlayerChange('weight', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
+                      <input
+                        type="number"
+                        value={playerToEdit.experience || ''}
+                        onChange={(e) => handlePlayerChange('experience', e.target.value ? Number(e.target.value) : null)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Domisili</label>
+                      <input
+                        type="text"
+                        value={playerToEdit.domisili || ''}
+                        onChange={(e) => handlePlayerChange('domisili', e.target.value)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
+                      <input
+                        type="text"
+                        value={playerToEdit.jurusan || ''}
+                        onChange={(e) => handlePlayerChange('jurusan', e.target.value)}
+                        className="input w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Foot</label>
+                      <select
+                        value={playerToEdit.foot || ''}
+                        onChange={(e) => handlePlayerChange('foot', e.target.value)}
+                        className="input w-full"
+                      >
+                        <option value="">Select foot</option>
+                        <option value="Kiri">Kiri</option>
+                        <option value="Kanan">Kanan</option>
+                        <option value="Keduanya">Keduanya</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={closeEditDialog}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={savePlayerChanges}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
