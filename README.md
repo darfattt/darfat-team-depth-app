@@ -11,6 +11,7 @@ A modern React TypeScript application for managing and visualizing soccer team d
 - Sort by any column by clicking the header
 - Color-coded player status indicators
 - **NEW: Visual 4-2-3-1 formation display**
+- **NEW: Supabase integration for shared data across users**
 - Side-by-side view of player list and formation
 - Animated player position display
 - Interactive tooltips with player details
@@ -55,6 +56,7 @@ The display includes:
 
 - Node.js (version 14 or higher)
 - npm (Node package manager)
+- Supabase account (for shared data functionality)
 
 ### Installation
 
@@ -69,12 +71,40 @@ cd soccer-team-depth-app
 npm install
 ```
 
-3. Start the development server:
+3. Set up Supabase:
+   - Create a free account at [Supabase](https://supabase.com)
+   - Create a new project
+   - Create a new table named `players` with the following structure:
+     - id (uuid, primary key)
+     - name (text)
+     - position (text)
+     - foot (text, nullable)
+     - jurusan (text, nullable)
+     - domisili (text, nullable)
+     - status (text)
+     - tags (text)
+     - scoutRecommendation (numeric, nullable)
+     - age (numeric, nullable)
+     - height (numeric, nullable)
+     - weight (numeric, nullable)
+     - experience (numeric, nullable)
+     - created_at (timestamp with timezone)
+
+4. Configure environment variables:
+   - Copy `.env` to `.env.local`
+   - Update the values in `.env.local` with your Supabase credentials:
+     ```
+     VITE_SUPABASE_URL="https://your-project-id.supabase.co"
+     VITE_SUPABASE_ANON_KEY="your-anon-key-here"
+     ```
+   - You can find these values in your Supabase project settings under API
+
+5. Start the development server:
 ```bash
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+6. Open your browser and navigate to `http://localhost:5173`
 
 ## Building for Production
 
@@ -126,7 +156,12 @@ This will create a `dist` directory with the production-ready files.
 
 ## Environment Variables
 
-No environment variables are required for this application.
+The application requires the following environment variables:
+
+- `VITE_SUPABASE_URL`: Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Your Supabase project anonymous key
+
+These can be set in a `.env.local` file in the project root or through your hosting platform (like Vercel).
 
 ## Technologies Used
 
@@ -135,6 +170,7 @@ No environment variables are required for this application.
 - XLSX for Excel file parsing
 - Heroicons for icons
 - Vite for development and building
+- Supabase for backend data storage and sharing
 
 ## Development
 

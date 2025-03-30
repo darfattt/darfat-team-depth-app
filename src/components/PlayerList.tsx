@@ -46,13 +46,16 @@ interface PlayerListProps {
   }) => void
   // Optional callback for player updates
   onPlayerUpdate?: (updatedPlayer: Player) => void
+  // Indicates if the app is currently saving player data
+  isSaving?: boolean
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({ 
   players, 
   filters,
   onFilterChange,
-  onPlayerUpdate
+  onPlayerUpdate,
+  isSaving = false
 }) => {
   // Use initial values from props
   const [searchTerm, setSearchTerm] = useState(filters.search || '')
@@ -214,7 +217,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
     if (!field) return [];
     if (Array.isArray(field)) return field;
     if (typeof field === 'string') {
-      // Handle comma-separated string format from Excel
+      // Handle comma-separated string format from Excel or Supabase
       return field.split(',').map(item => item.trim()).filter(Boolean);
     }
     return [];
@@ -489,28 +492,38 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const playerToEditable = (player: Player): EditablePlayer => {
     return {
       ...player,
+      // Ensure tags is always an array
+      tags: ensureArrayField(player.tags),
+      // Ensure status is always an array
       status: ensureArrayField(player.status)
     };
   };
 
   // Function to convert EditablePlayer back to Player format
   const editableToPlayer = (editablePlayer: EditablePlayer): Player => {
+    // For Supabase compatibility, convert arrays to comma-separated strings
     return {
       ...editablePlayer,
-      status: editablePlayer.status.join(', ')
+      tags: Array.isArray(editablePlayer.tags) ? editablePlayer.tags.join(', ') : editablePlayer.tags,
+      status: Array.isArray(editablePlayer.status) ? editablePlayer.status.join(', ') : editablePlayer.status
     } as unknown as Player;
   };
 
   // Function to open edit dialog
   const openEditDialog = (player: Player) => {
-    // Convert player to editable format
-    const editablePlayer = playerToEditable(player);
-    
-    setPlayerToEdit(editablePlayer);
-    setTagsInput(editablePlayer.tags.join(', '));
-    setStatusInput(editablePlayer.status.join(', '));
-    setIsAdditionalInfoOpen(false); // Ensure additional info is collapsed when opening dialog
-    setIsEditDialogOpen(true);
+    try {
+      // Convert player to editable format
+      const editablePlayer = playerToEditable(player);
+      
+      setPlayerToEdit(editablePlayer);
+      setTagsInput(Array.isArray(editablePlayer.tags) ? editablePlayer.tags.join(', ') : '');
+      setStatusInput(Array.isArray(editablePlayer.status) ? editablePlayer.status.join(', ') : '');
+      setIsAdditionalInfoOpen(false); // Ensure additional info is collapsed when opening dialog
+      setIsEditDialogOpen(true);
+    } catch (error) {
+      console.error('Error opening edit dialog:', error);
+      alert('There was an error opening the edit dialog. Please try again.');
+    }
   };
   
   // Function to close edit dialog
@@ -922,6 +935,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
               <button 
                 onClick={closeEditDialog}
                 className="text-gray-500 hover:text-gray-700"
+                disabled={isSaving}
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
@@ -1100,14 +1114,28 @@ const PlayerList: React.FC<PlayerListProps> = ({
               <button
                 onClick={closeEditDialog}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                disabled={isSaving}
               >
                 Cancel
               </button>
               <button
                 onClick={savePlayerChanges}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 ${
+                  isSaving ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+                disabled={isSaving}
               >
-                Save Changes
+                {isSaving ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </div>
           </div>

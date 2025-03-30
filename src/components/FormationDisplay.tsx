@@ -196,8 +196,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   const getPlayerNameColor = (player: Player | null): string => {
     if (!player) return colorScheme.text;
     
-    const playerStatus = player.status ? 
-      (Array.isArray(player.status) ? player.status[0] : player.status) : '';
+    const playerStatus = ensureArrayField(player.status)[0] || '';
     
     if (playerStatus === 'HG') return colorScheme.textHighlight;
     if (playerStatus === 'Player To Watch') return 'text-green-300';
@@ -208,8 +207,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   const getTagColor = (player: Player | null): string => {
     if (!player) return colorScheme.textSecondary;
     
-    const playerStatus = player.status ? 
-      (Array.isArray(player.status) ? player.status[0] : player.status) : '';
+    const playerStatus = ensureArrayField(player.status)[0] || '';
     
     if (playerStatus === 'HG') return 'text-yellow-200';
     if (playerStatus === 'Player To Watch') return 'text-green-200';
@@ -230,6 +228,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
   // Create a player info tooltip component
   const PlayerTooltip = ({ player }: { player: Player }) => {
     if (!player) return null;
+    
+    const playerTags = ensureArrayField(player.tags);
+    const playerStatus = ensureArrayField(player.status);
     
     return (
       <div className="fixed z-50 bg-gray-900/95 p-3 rounded-md shadow-xl text-left min-w-[220px]"
@@ -260,20 +261,20 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
               <StarRating rating={player.scoutRecommendation} size="sm" />
             </div>
           )}
-          {player.tags && player.tags.length > 0 && (
+          {playerTags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {player.tags.map((tag, idx) => (
+              {playerTags.map((tag, idx) => (
                 <span key={idx} className="text-[9px] px-1.5 py-0.5 bg-gray-700 rounded-sm text-gray-300">
                   {tag}
                 </span>
               ))}
             </div>
           )}
-          {player.status && (
+          {playerStatus.length > 0 && (
             <div className="text-xs mt-1">
               <span className="font-medium text-gray-300">Status:</span> 
-              <span className={`${player.status === 'HG' ? 'text-yellow-300' : 'text-green-300'} ml-1`}>
-                {Array.isArray(player.status) ? player.status.join(', ') : player.status}
+              <span className={`${playerStatus[0] === 'HG' ? 'text-yellow-300' : 'text-green-300'} ml-1`}>
+                {playerStatus.join(', ')}
               </span>
             </div>
           )}
