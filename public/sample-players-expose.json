@@ -197,7 +197,7 @@
   {
     "id": 14,
     "name": "Jumagar Arthady Sormin",
-    "position": "CB",
+    "position": "RCB",
     "age": null,
     "height": null,
     "weight": null,
@@ -242,7 +242,7 @@
   {
     "id": 17,
     "name": "Muhammad Adiyasa Muttaqin",
-    "position": "CB",
+    "position": "RCB",
     "age": null,
     "height": null,
     "weight": null,
@@ -602,7 +602,7 @@
   {
     "id": 41,
     "name": "Harry",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -617,7 +617,7 @@
   {
     "id": 42,
     "name": "Raafi",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -887,7 +887,7 @@
   {
     "id": 60,
     "name": "Risman Alifasya",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -902,7 +902,7 @@
   {
     "id": 61,
     "name": "Fauzan Ali",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -917,7 +917,7 @@
   {
     "id": 62,
     "name": "Ismansyah",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -932,7 +932,7 @@
   {
     "id": 63,
     "name": "Abdul Aziz",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -947,7 +947,7 @@
   {
     "id": 64,
     "name": "Dilal Fadilah",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -962,7 +962,7 @@
   {
     "id": 65,
     "name": "Faisal Ihsannuddin",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -977,7 +977,7 @@
   {
     "id": 66,
     "name": "Muhammad Taufik Rahman",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -992,7 +992,7 @@
   {
     "id": 67,
     "name": "Rijal",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -1007,7 +1007,7 @@
   {
     "id": 68,
     "name": "Galih Dwi Saputra",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -1022,7 +1022,7 @@
   {
     "id": 69,
     "name": "Baron Mohammad Rizky",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -1052,7 +1052,7 @@
   {
     "id": 71,
     "name": "Budi H",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -1067,7 +1067,7 @@
   {
     "id": 72,
     "name": "muhammad raffi attilah",
-    "position": "RW",
+    "position": "RM",
     "age": null,
     "height": null,
     "weight": null,
@@ -1097,7 +1097,7 @@
   {
     "id": 74,
     "name": "M Fikri",
-    "position": "LW",
+    "position": "LM",
     "age": null,
     "height": null,
     "weight": null,
@@ -1187,7 +1187,7 @@
   {
     "id": 80,
     "name": "Fadzri",
-    "position": "DM",
+    "position": "CDM",
     "age": null,
     "height": null,
     "weight": null,

@@ -385,44 +385,51 @@ function App() {
                       className="ml-2 px-2 py-1 border border-gray-300 rounded-md text-sm"
                     >
                       <option value="5">5</option>
+                      <option value="6">6</option>
                       <option value="7">7</option>
+                      <option value="8">8</option>
                       <option value="9">9</option>
-                      <option value="11">11</option>
                     </select>
                   </div>
                 </div>
                 
                 {/* Display filter information if any filters are active */}
-                {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search || 
-                  filters.minRating > 0 || (filters.footFilters && filters.footFilters.length > 0) || 
-                  (filters.tagFilters && filters.tagFilters.length > 0)) && (
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                    <div className="flex items-center flex-wrap text-sm text-gray-600">
-                      <span className="font-medium mr-2 mb-1">Active Filters:</span>
-                      {filters.positionArray.map(pos => (
-                        <span key={pos} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1 mb-1">{pos}</span>
-                      ))}
-                      {filters.statusArray.map(status => (
-                        <span key={status} className="bg-green-100 text-green-800 px-2 py-0.5 rounded mr-1 mb-1">{status}</span>
-                      ))}
-                      {filters.search && (
-                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">Search: {filters.search}</span>
-                      )}
-                      {filters.minRating > 0 && (
-                        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≥{filters.minRating.toFixed(1)}</span>
-                      )}
-                      {filters.footFilters && filters.footFilters.map(foot => (
-                        <span key={foot} className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded mr-1 mb-1">Foot: {foot}</span>
-                      ))}
-                      {filters.tagFilters && filters.tagFilters.map(tag => (
-                        <span key={tag} className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded mr-1 mb-1">Tag: {tag}</span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Groups are created from {filteredPlayers.length} players matching your current filters.
-                    </p>
-                  </div>
-                )}
+{(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search || 
+  filters.minRating > 0 || (filters.footFilters && filters.footFilters.length > 0) || 
+  (filters.tagFilters && filters.tagFilters.length > 0)) ? (
+  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+    <div className="flex items-center flex-wrap text-sm text-gray-600">
+      <span className="font-medium mr-2 mb-1">Active Filters:</span>
+      {filters.positionArray.map(pos => (
+        <span key={pos} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1 mb-1">{pos}</span>
+      ))}
+      {filters.statusArray.map(status => (
+        <span key={status} className="bg-green-100 text-green-800 px-2 py-0.5 rounded mr-1 mb-1">{status}</span>
+      ))}
+      {filters.search && (
+        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">Search: {filters.search}</span>
+      )}
+      {filters.minRating > 0 && (
+        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≥{filters.minRating.toFixed(1)}</span>
+      )}
+      {filters.footFilters && filters.footFilters.map(foot => (
+        <span key={foot} className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded mr-1 mb-1">Foot: {foot}</span>
+      ))}
+      {filters.tagFilters && filters.tagFilters.map(tag => (
+        <span key={tag} className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded mr-1 mb-1">Tag: {tag}</span>
+      ))}
+    </div>
+    <p className="text-xs text-gray-500 mt-2">
+      Groups are created from {filteredPlayers.length} players matching your current filters.
+    </p>
+  </div>
+) : (
+  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+    <p className="text-sm text-gray-600">
+      Showing all {filteredPlayers.length} players (no filters active) (and include goalkeepers)
+    </p>
+  </div>
+)}
                 
                 {/* Team Groups component */}
                 <TeamGroups 
