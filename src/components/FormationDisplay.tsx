@@ -219,8 +219,8 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
     switch (position) {
       case 'LCB': return 'LCB';  // Keep as LCB
       case 'RCB': return 'RCB';  // Keep as RCB
-      case 'CDM': return 'CDM';  // Updated from LCDM
-      case 'CM': return 'CM';    // Updated from RCDM
+      case 'CDM': return 'DM';  // Updated from LCDM
+      case 'CM': return 'DM';    // Updated from RCDM
       default: return getPositionLabel(position);
     }
   };
