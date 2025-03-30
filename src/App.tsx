@@ -11,6 +11,9 @@ import {
 const teamColors = ['red', 'blue', 'green', 'yellow', 'gray'] as const;
 type TeamColor = typeof teamColors[number];
 
+// Check if running in local development mode
+const IS_LOCAL_MODE = import.meta.env?.MODE === 'development';
+
 // Define Filters type here since it's used in App.tsx
 export interface Filters {
   position: string;
@@ -87,15 +90,24 @@ function App() {
         updatedPlayer.recommendations = []; // Initialize if not present
       }
       
-      // Persist data to Supabase
+      // Persist data to Supabase (or simulate in local mode)
       const result = await updatePlayer(updatedPlayer);
       
       // If server update was successful, update message
       setUpdateMessage('Player updated successfully');
       
-      // If Supabase returned updated players, sync with those
+      // If we got updated players back (from Supabase), sync with those
       if (result && result.length > 0) {
-        setPlayers(result);
+        // Check if we just received the single updated player (local mode)
+        // or the full list (Supabase mode)
+        if (result.length === 1 && result[0].id === updatedPlayer.id) {
+          // Local development mode - we only got the updated player back
+          // Keep our local state as is
+          console.log('Local mode: Updated single player');
+        } else {
+          // Supabase mode - we got the full list back
+          setPlayers(result);
+        }
       }
       
       // Show notification
@@ -221,6 +233,11 @@ function App() {
               ></path>
             </svg>
             <h1 className="text-xl font-bold text-white">Expose Team Depth</h1>
+            {IS_LOCAL_MODE && (
+              <span className="bg-yellow-500 text-xs font-medium px-2 py-1 rounded-md text-black ml-2">
+                Local Mode
+              </span>
+            )}
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-gray-300">
