@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import PlayerList from './components/PlayerList'
 import FormationDisplay from './components/FormationDisplay'
+import TeamGroups from './components/TeamGroups'
 import { Player } from './types'
 import { loadSamplePlayers, updatePlayer } from './utils/sampleData'
 import { 
@@ -44,8 +45,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<string>('')
-  const [activeTab, setActiveTab] = useState<'list' | 'formation'>('list')
+  const [activeTab, setActiveTab] = useState<'list' | 'formation' | 'groups'>('list')
   const [teamColor, setTeamColor] = useState<TeamColor>('green')
+  const [playersPerGroup, setPlayersPerGroup] = useState<number>(5)
   const [filters, setFilters] = useState<Filters>({
     position: '',
     status: '',
@@ -257,6 +259,12 @@ function App() {
               >
                 Formation
               </button>
+              <button 
+                onClick={() => setActiveTab('groups')} 
+                className={`px-3 py-1 text-sm rounded-md ${activeTab === 'groups' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+              >
+                Team Groups
+              </button>
             </div>
           </div>
         </div>
@@ -282,18 +290,29 @@ function App() {
                   <div className="text-sm text-gray-500">
                     {filteredPlayers.length} of {players.length} players shown
                   </div>
-                  <button
-                    onClick={() => setActiveTab('formation')}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-md"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                    </svg>
-                    <span>View in Formation</span>
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setActiveTab('formation')}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-md"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                      </svg>
+                      <span>View in Formation</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('groups')}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-md"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span>Create Team Groups</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            ) : (
+            ) : activeTab === 'formation' ? (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-bold text-gray-800">4-2-3-1 Formation</h2>
@@ -341,6 +360,75 @@ function App() {
                 <div className="text-sm text-gray-500 italic text-center mt-2">
                   Note: Players are assigned to positions based on their listed position, scout recommendation, and age
                 </div>
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() => setActiveTab('groups')}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-md"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Create Team Groups</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Team Groups View will be added here */}
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">Team Groups</h2>
+                  <div className="flex space-x-2 items-center">
+                    <label className="text-sm text-gray-600">Players per group:</label>
+                    <select 
+                      value={playersPerGroup}
+                      onChange={(e) => setPlayersPerGroup(Number(e.target.value))}
+                      className="ml-2 px-2 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="5">5</option>
+                      <option value="7">7</option>
+                      <option value="9">9</option>
+                      <option value="11">11</option>
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Display filter information if any filters are active */}
+                {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search || 
+                  filters.minRating > 0 || (filters.footFilters && filters.footFilters.length > 0) || 
+                  (filters.tagFilters && filters.tagFilters.length > 0)) && (
+                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                    <div className="flex items-center flex-wrap text-sm text-gray-600">
+                      <span className="font-medium mr-2 mb-1">Active Filters:</span>
+                      {filters.positionArray.map(pos => (
+                        <span key={pos} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1 mb-1">{pos}</span>
+                      ))}
+                      {filters.statusArray.map(status => (
+                        <span key={status} className="bg-green-100 text-green-800 px-2 py-0.5 rounded mr-1 mb-1">{status}</span>
+                      ))}
+                      {filters.search && (
+                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">Search: {filters.search}</span>
+                      )}
+                      {filters.minRating > 0 && (
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≥{filters.minRating.toFixed(1)}</span>
+                      )}
+                      {filters.footFilters && filters.footFilters.map(foot => (
+                        <span key={foot} className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded mr-1 mb-1">Foot: {foot}</span>
+                      ))}
+                      {filters.tagFilters && filters.tagFilters.map(tag => (
+                        <span key={tag} className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded mr-1 mb-1">Tag: {tag}</span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Groups are created from {filteredPlayers.length} players matching your current filters.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Team Groups component */}
+                <TeamGroups 
+                  players={filteredPlayers} 
+                  playersPerGroup={playersPerGroup} 
+                />
               </div>
             )}
           </>
