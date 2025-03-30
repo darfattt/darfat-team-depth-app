@@ -1,4 +1,4 @@
-import { Player } from '../types';
+import { Player, ScoutRecommendation } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -22,6 +22,7 @@ const EXCEL_COLUMNS: ExcelColumn[] = [
   { key: 'domisili', header: 'Domisili', width: 15 },
   { key: 'jurusan', header: 'Jurusan', width: 15 },
   { key: 'scoutRecommendation', header: 'Scout Rating', width: 12 },
+  { key: 'recommendations' as keyof Player, header: 'Recommendations', width: 25 },
 ];
 
 export const exportPlayersToExcel = (players: Player[]): void => {
@@ -99,7 +100,10 @@ export const importPlayersFromExcel = async (file: File): Promise<Player[]> => {
             player[col.key] = Number(cellValue);
             break;
           default:
-            player[col.key] = String(cellValue).trim();
+            // Handle string-type fields with type safety
+            if (col.key !== 'recommendations') {
+              player[col.key] = String(cellValue).trim() as any;
+            }
         }
       }
     });
@@ -173,4 +177,65 @@ export const downloadSampleExcel = (): void => {
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(blob, 'sample-players-template.xlsx');
   });
+};
+
+export const parseExcelData = (data: any[]): Player[] => {
+  const players: Player[] = [];
+
+  data.forEach(row => {
+    const player: Partial<Player> = {};
+
+    // Handle each column based on its type
+    EXCEL_COLUMNS.forEach(col => {
+      const cellValue = row[col.header];
+
+      if (cellValue !== undefined && cellValue !== null && cellValue !== '') {
+        switch (col.key) {
+          case 'tags':
+          case 'status':
+            player[col.key] = String(cellValue).split(',').map(s => s.trim()) as any;
+            break;
+          case 'recommendations' as keyof Player:
+            // Parse recommendations from a string format like "Scout1:4.5,Scout2:3.0"
+            try {
+              if (typeof cellValue === 'string') {
+                // Process recommendations
+                const recommendationsArray: ScoutRecommendation[] = cellValue.split(',').map(rec => {
+                  const [scoutName, ratingStr] = rec.split(':').map(s => s.trim());
+                  return {
+                    scoutName, 
+                    recommendationValue: parseFloat(ratingStr) || 0
+                  };
+                });
+                player.recommendations = recommendationsArray;
+              } else {
+                player.recommendations = [];
+              }
+            } catch (e) {
+              console.error('Error parsing recommendations:', e);
+              player.recommendations = [];
+            }
+            break;
+          case 'scoutRecommendation':
+            player[col.key] = Number(cellValue) || 0;
+            break;
+          case 'age':
+          case 'height':
+          case 'weight':
+          case 'experience':
+            player[col.key] = Number(cellValue);
+            break;
+          default:
+            // Handle string-type fields with type safety
+            if (col.key !== 'recommendations') {
+              player[col.key] = String(cellValue).trim() as any;
+            }
+        }
+      }
+    });
+
+    players.push(player as Player);
+  });
+
+  return players;
 }; 

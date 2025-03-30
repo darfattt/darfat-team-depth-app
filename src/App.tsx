@@ -87,13 +87,13 @@ function App() {
         updatedPlayer.recommendations = []; // Initialize if not present
       }
       
-      // Persist data to storage
+      // Persist data to Supabase
       const result = await updatePlayer(updatedPlayer);
       
       // If server update was successful, update message
       setUpdateMessage('Player updated successfully');
       
-      // If the server returned updated players, sync with those
+      // If Supabase returned updated players, sync with those
       if (result && result.length > 0) {
         setPlayers(result);
       }

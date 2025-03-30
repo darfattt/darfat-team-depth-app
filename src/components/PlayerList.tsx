@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Player, ScoutRecommendation } from '../types'
-import * as XLSX from 'xlsx'
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { parseExcelData, generateExcelFile } from '../utils/excelGenerator'
+import { generateExcelFile } from '../utils/excelGenerator'
 import StarRating from './StarRating'
 
 // Add interfaces for the edit functionality
@@ -71,12 +70,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [playerToEdit, setPlayerToEdit] = useState<EditablePlayer | null>(null)
   const [tagsInput, setTagsInput] = useState('')
-  const [statusInput, setStatusInput] = useState('')
   const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false)
   
   const [sortField, setSortField] = useState<keyof Player>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   // Ref to track if we're handling an update from props
@@ -230,35 +227,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
     } else {
       setSortField(field)
       setSortDirection('asc')
-    }
-  }
-
-  const handleExcelUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
-        const excelData = XLSX.utils.sheet_to_json(worksheet)
-        
-        const parsedPlayers = parseExcelData(excelData)
-        // Replace setPlayers with a local variable since we don't need to update parent players
-        console.log('Parsed players from Excel:', parsedPlayers.length)
-      } catch (error) {
-        console.error('Error parsing Excel file:', error)
-        alert('Error parsing Excel file. Please check the format.')
-      }
-    }
-    reader.readAsArrayBuffer(file)
-    
-    // Reset the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
     }
   }
 
@@ -600,7 +568,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
       
       setPlayerToEdit(editablePlayer);
       setTagsInput(Array.isArray(editablePlayer.tags) ? editablePlayer.tags.join(', ') : '');
-      setStatusInput(Array.isArray(editablePlayer.status) ? editablePlayer.status.join(', ') : '');
       setIsAdditionalInfoOpen(false); // Ensure additional info is collapsed when opening dialog
       setIsEditDialogOpen(true);
     } catch (error) {
@@ -613,6 +580,26 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const closeEditDialog = () => {
     setIsEditDialogOpen(false);
     setPlayerToEdit(null);
+  };
+  
+  // Function to navigate to previous player
+  const navigateToPrevPlayer = () => {
+    if (!playerToEdit) return;
+    
+    const currentIndex = filteredPlayers.findIndex(p => p.id === playerToEdit.id);
+    if (currentIndex > 0) {
+      openEditDialog(filteredPlayers[currentIndex - 1]);
+    }
+  };
+  
+  // Function to navigate to next player
+  const navigateToNextPlayer = () => {
+    if (!playerToEdit) return;
+    
+    const currentIndex = filteredPlayers.findIndex(p => p.id === playerToEdit.id);
+    if (currentIndex < filteredPlayers.length - 1) {
+      openEditDialog(filteredPlayers[currentIndex + 1]);
+    }
   };
   
   // Function to handle player property changes
@@ -633,18 +620,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
       setPlayerToEdit({
         ...playerToEdit,
         tags
-      });
-    }
-  };
-  
-  // Function to handle status input
-  const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStatusInput(e.target.value);
-    if (playerToEdit) {
-      const status = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-      setPlayerToEdit({
-        ...playerToEdit,
-        status
       });
     }
   };
@@ -884,22 +859,6 @@ const PlayerList: React.FC<PlayerListProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
-          {/* <button
-            className="btn btn-blue flex items-center gap-2 hover:bg-blue-600 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-            Import Excel
-          </button>
-          <input
-            type="file"
-            accept=".xlsx, .xls"
-            className="hidden"
-            onChange={handleExcelUpload}
-            ref={fileInputRef}
-          /> */}
           <button
             className="btn btn-green flex items-center gap-2 hover:bg-green-600 transition-colors"
             onClick={handleExcelDownload}
@@ -1012,329 +971,381 @@ const PlayerList: React.FC<PlayerListProps> = ({
       {/* Edit Player Dialog */}
       {isEditDialogOpen && playerToEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Edit Player</h2>
-              <button 
-                onClick={closeEditDialog}
-                className="text-gray-500 hover:text-gray-700"
-                disabled={isSaving}
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
+          <div className="bg-white rounded-lg w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-white z-10 p-6 pb-2 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <h2 className="text-xl font-bold">Edit Player</h2>
+                  <div className="ml-4 flex items-center gap-2">
+                    <button 
+                      onClick={navigateToPrevPlayer}
+                      className="p-1 rounded hover:bg-gray-100"
+                      disabled={isSaving || filteredPlayers.findIndex(p => p.id === playerToEdit.id) === 0}
+                      title="Previous Player"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={navigateToNextPlayer}
+                      className="p-1 rounded hover:bg-gray-100"
+                      disabled={isSaving || filteredPlayers.findIndex(p => p.id === playerToEdit.id) === filteredPlayers.length - 1}
+                      title="Next Player"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <button 
+                  onClick={closeEditDialog}
+                  className="text-gray-500 hover:text-gray-700"
+                  disabled={isSaving}
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
-            <div className="space-y-4">
-              {/* Main fields */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <div className="flex-1 overflow-y-auto p-6 pt-4">
+              <div className="space-y-4">
+                {/* Main fields */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={playerToEdit.name}
+                      onChange={(e) => handlePlayerChange('name', e.target.value)}
+                      className="input w-full"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                      <select
+                        value={playerToEdit.position}
+                        onChange={(e) => handlePlayerChange('position', e.target.value)}
+                        className="input w-full"
+                      >
+                        <option value="GK">GK</option>
+                        <option value="LB">LB</option>
+                        <option value="LCB">LCB</option>
+                        <option value="RCB">RCB</option>
+                        <option value="RB">RB</option>
+                        <option value="CDM">CDM</option>
+                        <option value="CM">CM</option>
+                        <option value="LM">LM</option>
+                        <option value="CAM">CAM</option>
+                        <option value="RM">RM</option>
+                        <option value="ST">ST</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                    
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {statusOptions.map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => {
+                            // Toggle the status in the array
+                            if (!playerToEdit) return;
+                            const currentStatuses = [...playerToEdit.status];
+                            const index = currentStatuses.indexOf(status);
+                            
+                            if (index >= 0) {
+                              // Remove status if already selected
+                              currentStatuses.splice(index, 1);
+                            } else {
+                              // Add status if not selected
+                              currentStatuses.push(status);
+                            }
+                            
+                            // Update player status
+                            setPlayerToEdit({
+                              ...playerToEdit,
+                              status: currentStatuses
+                            });
+                          }}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                            playerToEdit.status.includes(status)
+                              ? getStatusButtonColor(status)
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {playerToEdit.status.length > 0 ? (
+                        playerToEdit.status.map((status) => (
+                          <span
+                            key={status}
+                            className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status)}`}
+                          >
+                            {status}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-500">No status selected</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Scout Recommendations Section */}
+                <div className="mt-6">
+                  <h3 className="text-md font-semibold text-gray-700 mb-3">Scout Recommendations</h3>
+                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                    {/* Summary of recommendations */}
+                    <div className="border-b border-gray-200 pb-3 mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-semibold text-gray-700">Scout Recommendation</span>
+                        <div className="flex items-center">
+                          <span className="text-lg font-bold text-blue-600 mr-2">
+                            {playerToEdit.scoutRecommendation?.toFixed(1) || "0.0"}
+                          </span>
+                          <StarRating rating={playerToEdit.scoutRecommendation || 0} size="md" />
+                        </div>
+                      </div>
+                      
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${getRatingColorClass(playerToEdit.scoutRecommendation || 0)}`}
+                          style={{ width: `${((playerToEdit.scoutRecommendation || 0) / 5) * 100}%` }}
+                        ></div>
+                      </div>
+                      
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Poor</span>
+                        <span>Average</span>
+                        <span>Excellent</span>
+                      </div>
+                    </div>
+                    
+                    {/* Individual scout ratings */}
+                    {(playerToEdit.recommendations || []).map((rec) => (
+                      <div key={rec.scoutName} className="mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-sm font-medium text-gray-700">{rec.scoutName}</label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-600 min-w-[2rem] text-right">
+                              {rec.recommendationValue.toFixed(1)}
+                            </span>
+                            <StarRating 
+                              rating={rec.recommendationValue} 
+                              size="sm" 
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="0"
+                            max="5"
+                            step="0.5"
+                            value={rec.recommendationValue}
+                            onChange={(e) => handleScoutRecommendationChange(rec.scoutName, parseFloat(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          />
+                          <div className="flex justify-between text-xs text-gray-500 w-24">
+                            <span>0</span>
+                            <span>2.5</span>
+                            <span>5</span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div 
+                            className={`h-1.5 rounded-full ${getRatingColorClass(rec.recommendationValue)}`}
+                            style={{ width: `${(rec.recommendationValue / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Tags section moved below scout recommendations */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tags (comma separated)
+                  </label>
                   <input
                     type="text"
-                    value={playerToEdit.name}
-                    onChange={(e) => handlePlayerChange('name', e.target.value)}
+                    value={tagsInput}
+                    onChange={handleTagsInputChange}
                     className="input w-full"
+                    placeholder="E.g. Fast, Technical, Leader"
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                    <select
-                      value={playerToEdit.position}
-                      onChange={(e) => handlePlayerChange('position', e.target.value)}
-                      className="input w-full"
-                    >
-                      <option value="GK">GK</option>
-                      <option value="LB">LB</option>
-                      <option value="LCB">LCB</option>
-                      <option value="RCB">RCB</option>
-                      <option value="RB">RB</option>
-                      <option value="CDM">CDM</option>
-                      <option value="CM">CM</option>
-                      <option value="LM">LM</option>
-                      <option value="CAM">CAM</option>
-                      <option value="RM">RM</option>
-                      <option value="ST">ST</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                  
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {statusOptions.map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => {
-                          // Toggle the status in the array
-                          if (!playerToEdit) return;
-                          const currentStatuses = [...playerToEdit.status];
-                          const index = currentStatuses.indexOf(status);
-                          
-                          if (index >= 0) {
-                            // Remove status if already selected
-                            currentStatuses.splice(index, 1);
-                          } else {
-                            // Add status if not selected
-                            currentStatuses.push(status);
-                          }
-                          
-                          // Update player status
-                          setPlayerToEdit({
-                            ...playerToEdit,
-                            status: currentStatuses
-                          });
-                          
-                          // Update status input for compatibility
-                          setStatusInput(currentStatuses.join(', '));
-                        }}
-                        className={`px-2 py-1 text-xs rounded-full transition-colors ${
-                          playerToEdit.status.includes(status)
-                            ? getStatusButtonColor(status)
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-1 mb-1">
-                    {playerToEdit.status.length > 0 ? (
-                      playerToEdit.status.map((status) => (
-                        <span
-                          key={status}
-                          className={`px-2 py-1 text-xs rounded-full ${getStatusColor(status)}`}
-                        >
-                          {status}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-sm text-gray-500">No status selected</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Scout Recommendations Section */}
-              <div className="mt-6">
-                <h3 className="text-md font-semibold text-gray-700 mb-3">Scout Recommendations</h3>
-                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                  {/* Summary of recommendations */}
-                  <div className="border-b border-gray-200 pb-3 mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-semibold text-gray-700">Scout Recommendation</span>
-                      <div className="flex items-center">
-                        <span className="text-lg font-bold text-blue-600 mr-2">
-                          {playerToEdit.scoutRecommendation?.toFixed(1) || "0.0"}
-                        </span>
-                        <StarRating rating={playerToEdit.scoutRecommendation || 0} size="md" />
-                      </div>
-                    </div>
-                    
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${getRatingColorClass(playerToEdit.scoutRecommendation || 0)}`}
-                        style={{ width: `${((playerToEdit.scoutRecommendation || 0) / 5) * 100}%` }}
-                      ></div>
-                    </div>
-                    
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Poor</span>
-                      <span>Average</span>
-                      <span>Excellent</span>
-                    </div>
-                  </div>
-                  
-                  {/* Individual scout ratings */}
-                  {(playerToEdit.recommendations || []).map((rec, index) => (
-                    <div key={rec.scoutName} className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-medium text-gray-700">{rec.scoutName}</label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-600 min-w-[2rem] text-right">
-                            {rec.recommendationValue.toFixed(1)}
-                          </span>
-                          <StarRating 
-                            rating={rec.recommendationValue} 
-                            size="sm" 
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="range"
-                          min="0"
-                          max="5"
-                          step="0.5"
-                          value={rec.recommendationValue}
-                          onChange={(e) => handleScoutRecommendationChange(rec.scoutName, parseFloat(e.target.value))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 w-24">
-                          <span>0</span>
-                          <span>2.5</span>
-                          <span>5</span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                        <div 
-                          className={`h-1.5 rounded-full ${getRatingColorClass(rec.recommendationValue)}`}
-                          style={{ width: `${(rec.recommendationValue / 5) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Tags section moved below scout recommendations */}
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tags (comma separated)
-                </label>
-                <input
-                  type="text"
-                  value={tagsInput}
-                  onChange={handleTagsInputChange}
-                  className="input w-full"
-                  placeholder="E.g. Fast, Technical, Leader"
-                />
-              </div>
-              
-              {/* Additional fields - Collapsible */}
-              <div className="mt-4">
-                <button 
-                  type="button"
-                  onClick={() => setIsAdditionalInfoOpen(!isAdditionalInfoOpen)}
-                  className="flex w-full items-center justify-between text-md font-semibold mb-2 text-gray-700 hover:text-gray-900"
-                >
-                  <span>Additional Information</span>
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className={`h-5 w-5 transform transition-transform ${isAdditionalInfoOpen ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
+                {/* Additional fields - Collapsible */}
+                <div className="mt-4">
+                  <button 
+                    type="button"
+                    onClick={() => setIsAdditionalInfoOpen(!isAdditionalInfoOpen)}
+                    className="flex w-full items-center justify-between text-md font-semibold mb-2 text-gray-700 hover:text-gray-900"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {isAdditionalInfoOpen && (
-                  <div className="grid grid-cols-2 gap-4 mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                      <input
-                        type="number"
-                        value={playerToEdit.age || ''}
-                        onChange={(e) => handlePlayerChange('age', e.target.value ? Number(e.target.value) : null)}
-                        className="input w-full"
-                      />
+                    <span>Additional Information</span>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-5 w-5 transform transition-transform ${isAdditionalInfoOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {isAdditionalInfoOpen && (
+                    <div className="grid grid-cols-2 gap-4 mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                        <input
+                          type="number"
+                          value={playerToEdit.age || ''}
+                          onChange={(e) => handlePlayerChange('age', e.target.value ? Number(e.target.value) : null)}
+                          className="input w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                        <input
+                          type="number"
+                          value={playerToEdit.height || ''}
+                          onChange={(e) => handlePlayerChange('height', e.target.value ? Number(e.target.value) : null)}
+                          className="input w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                        <input
+                          type="number"
+                          value={playerToEdit.weight || ''}
+                          onChange={(e) => handlePlayerChange('weight', e.target.value ? Number(e.target.value) : null)}
+                          className="input w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
+                        <input
+                          type="number"
+                          value={playerToEdit.experience || ''}
+                          onChange={(e) => handlePlayerChange('experience', e.target.value ? Number(e.target.value) : null)}
+                          className="input w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Domisili</label>
+                        <input
+                          type="text"
+                          value={playerToEdit.domisili || ''}
+                          onChange={(e) => handlePlayerChange('domisili', e.target.value)}
+                          className="input w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
+                        <input
+                          type="text"
+                          value={playerToEdit.jurusan || ''}
+                          onChange={(e) => handlePlayerChange('jurusan', e.target.value)}
+                          className="input w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Foot</label>
+                        <select
+                          value={playerToEdit.foot || ''}
+                          onChange={(e) => handlePlayerChange('foot', e.target.value)}
+                          className="input w-full"
+                        >
+                          <option value="">Select foot</option>
+                          <option value="Kiri">Kiri</option>
+                          <option value="Kanan">Kanan</option>
+                          <option value="Keduanya">Keduanya</option>
+                        </select>
+                      </div>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-                      <input
-                        type="number"
-                        value={playerToEdit.height || ''}
-                        onChange={(e) => handlePlayerChange('height', e.target.value ? Number(e.target.value) : null)}
-                        className="input w-full"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                      <input
-                        type="number"
-                        value={playerToEdit.weight || ''}
-                        onChange={(e) => handlePlayerChange('weight', e.target.value ? Number(e.target.value) : null)}
-                        className="input w-full"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
-                      <input
-                        type="number"
-                        value={playerToEdit.experience || ''}
-                        onChange={(e) => handlePlayerChange('experience', e.target.value ? Number(e.target.value) : null)}
-                        className="input w-full"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Domisili</label>
-                      <input
-                        type="text"
-                        value={playerToEdit.domisili || ''}
-                        onChange={(e) => handlePlayerChange('domisili', e.target.value)}
-                        className="input w-full"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Jurusan</label>
-                      <input
-                        type="text"
-                        value={playerToEdit.jurusan || ''}
-                        onChange={(e) => handlePlayerChange('jurusan', e.target.value)}
-                        className="input w-full"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Foot</label>
-                      <select
-                        value={playerToEdit.foot || ''}
-                        onChange={(e) => handlePlayerChange('foot', e.target.value)}
-                        className="input w-full"
-                      >
-                        <option value="">Select foot</option>
-                        <option value="Kiri">Kiri</option>
-                        <option value="Kanan">Kanan</option>
-                        <option value="Keduanya">Keduanya</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
             
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                onClick={closeEditDialog}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={savePlayerChanges}
-                className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 ${
-                  isSaving ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
+            <div className="sticky bottom-0 bg-white z-10 p-6 pt-2 border-t border-gray-200">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={closeEditDialog}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (playerToEdit && onPlayerUpdate) {
+                      // Convert back to player format expected by parent
+                      const updatedPlayer = editableToPlayer(playerToEdit);
+                      onPlayerUpdate(updatedPlayer);
+                    }
+                  }}
+                  className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 ${
+                    isSaving ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </button>
+                <button
+                  onClick={savePlayerChanges}
+                  className={`px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-2 ${
+                    isSaving ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save & Close'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
