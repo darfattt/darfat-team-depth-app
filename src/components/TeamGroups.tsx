@@ -282,118 +282,150 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
         }
       }
       
-      // Helper function to update position counts when a new group is added
-      const updatePositionCounts = () => {
-        positionCounts = newGroups.map((group) => {
-          // Count the existing positions in this group
-          const counts = {
-            defender: 0,
-            midfielder: 0,
-            forward: 0
-          };
-          
-          group.forEach(player => {
-            if (player.positionType === 'defender') counts.defender++;
-            else if (player.positionType === 'midfielder') counts.midfielder++;
-            else if (player.positionType === 'forward') counts.forward++;
-          });
-          
-          return counts;
-        });
-      };
+      // Define distribution patterns based on playersPerGroup
+      let distributionPattern: ('defender' | 'midfielder' | 'forward')[] = [];
       
-      // Helper function to add a new group and update position counts
-      const addNewGroupAndUpdateCounts = () => {
-        const newGroupIndex = addNewGroup();
-        // Add a new entry to position counts
-        positionCounts.push({
-          defender: 0,
-          midfielder: 0,
-          forward: 0
-        });
-        return newGroupIndex;
-      };
-      
-      // Helper function to find the group that needs more of a specific position
-      const findGroupNeedingPosition = (positionType: 'defender' | 'midfielder' | 'forward', targetRatio: number) => {
-        // Make sure position counts array is up to date with the number of groups
-        if (positionCounts.length < newGroups.length) {
-          updatePositionCounts();
-        }
-        
-        // Find groups that haven't reached their target ratio for this position AND haven't reached max capacity
-        const eligibleGroups = positionCounts.map((counts, index) => {
-          const currentCount = counts[positionType];
-          const totalPlayersInGroup = newGroups[index].length;
-          return { 
-            index, 
-            currentCount,
-            totalPlayersInGroup
-          };
-        }).filter(group => {
-          return group.currentCount < targetRatio && group.totalPlayersInGroup < maxPlayersPerGroup;
-        });
-        
-        // If no eligible groups (all full or reached target ratio), check if we need to create a new group
-        if (eligibleGroups.length === 0) {
-          // Check if all groups are at max capacity
-          const allGroupsFull = newGroups.every(group => group.length >= maxPlayersPerGroup);
-          
-          if (allGroupsFull) {
-            // Create a new group and update position counts
-            return addNewGroupAndUpdateCounts();
-          }
-          
-          // Find the group with the least players that isn't full
-          const nonFullGroups = newGroups.map((group, index) => ({
-            index,
-            count: group.length
-          })).filter(group => group.count < maxPlayersPerGroup);
-          
-          if (nonFullGroups.length > 0) {
-            // Sort by count (ascending) to find the least populated group
-            nonFullGroups.sort((a, b) => a.count - b.count);
-            return nonFullGroups[0].index;
-          }
-          
-          // If we somehow get here, use the least populated or lowest rated group
-          return findLeastPopulatedOrLowestRatedGroupIndex();
-        }
-        
-        // Sort by current count (ascending) to prioritize groups with fewer of this position
-        eligibleGroups.sort((a, b) => {
-          // First prioritize by position count
-          if (a.currentCount !== b.currentCount) {
-            return a.currentCount - b.currentCount;
-          }
-          // Then by total players in group
-          return a.totalPlayersInGroup - b.totalPlayersInGroup;
-        });
-        
-        return eligibleGroups[0].index;
-      };
-      
-      // Distribute defenders
-      while (defenders.length > 0) {
-        const groupIndex = findGroupNeedingPosition('defender', defenderRatio);
-        newGroups[groupIndex].push(defenders.shift()!);
-        positionCounts[groupIndex].defender++;
+      if (playersPerGroup === 5) {
+        // 5 players: 2 defenders, 1 midfielder, 2 forwards
+        distributionPattern = ['defender', 'midfielder', 'forward', 'defender', 'forward'];
+      } else if (playersPerGroup === 6) {
+        // 6 players: 2 defenders, 2 midfielders, 2 forwards
+        distributionPattern = ['defender', 'midfielder', 'forward', 'defender', 'midfielder', 'forward'];
+      } else if (playersPerGroup === 7) {
+        // 7 players: 3 defenders, 1 midfielder, 3 forwards
+        distributionPattern = ['defender', 'midfielder', 'forward', 'defender', 'forward', 'defender', 'forward'];
+      } else if (playersPerGroup === 8) {
+        // 8 players: 3 defenders, 2 midfielders, 3 forwards
+        distributionPattern = ['defender', 'midfielder', 'forward', 'defender', 'midfielder', 'forward', 'defender', 'forward'];
+      } else if (playersPerGroup === 9) {
+        // 9 players: 4 defenders, 2 midfielders, 3 forwards
+        distributionPattern = ['defender', 'midfielder', 'forward', 'defender', 'midfielder', 'forward', 'defender', 'forward', 'defender'];
+      } else if (playersPerGroup === 10 || playersPerGroup === 11) {
+        // 10/11 players: 4 defenders, 3 midfielders, 3 forwards
+        distributionPattern = ['defender', 'midfielder', 'forward', 'defender', 'midfielder', 'forward', 'defender', 'midfielder', 'forward', 'defender'];
       }
       
-      // Distribute midfielders
-      while (midfielders.length > 0) {
-        const groupIndex = findGroupNeedingPosition('midfielder', midfielderRatio);
-        newGroups[groupIndex].push(midfielders.shift()!);
-        positionCounts[groupIndex].midfielder++;
+      // Helper function to get the next available player of the specified position
+      // If no player of the requested position is available, try the fallback sequence
+      const getNextPlayer = (preferredPosition: 'defender' | 'midfielder' | 'forward'): GroupedPlayer | null => {
+        // Try to get a player of the preferred position
+        if (preferredPosition === 'defender' && defenders.length > 0) {
+          return defenders.shift()!;
+        } else if (preferredPosition === 'midfielder' && midfielders.length > 0) {
+          return midfielders.shift()!;
+        } else if (preferredPosition === 'forward' && forwards.length > 0) {
+          return forwards.shift()!;
+        }
+        
+        // If preferred position is not available, follow fallback sequence: defender > midfielder > forward
+        if (defenders.length > 0) {
+          return defenders.shift()!;
+        } else if (midfielders.length > 0) {
+          return midfielders.shift()!;
+        } else if (forwards.length > 0) {
+          return forwards.shift()!;
+        }
+        
+        // No players available
+        return null;
+      };
+      
+      // Distribute players in rounds according to the pattern
+      let allPlayersDistributed = false;
+      let round = 0;
+      
+      while (!allPlayersDistributed) {
+        let anyPlayerAdded = false;
+        
+        // For each group, try to add a player according to the current position in the pattern
+        for (let groupIndex = 0; groupIndex < newGroups.length; groupIndex++) {
+          // Skip if group is already at max capacity
+          if (newGroups[groupIndex].length >= playersPerGroup) {
+            continue;
+          }
+          
+          // Determine which position to add based on the current round
+          const positionIndex = round % distributionPattern.length;
+          const positionToAdd = distributionPattern[positionIndex];
+          
+          // Try to get a player of the specified position
+          const player = getNextPlayer(positionToAdd);
+          
+          // If a player was found, add them to the group
+          if (player) {
+            newGroups[groupIndex].push(player);
+            
+            // Update position counts
+            if (player.positionType === 'defender') {
+              positionCounts[groupIndex].defender++;
+            } else if (player.positionType === 'midfielder') {
+              positionCounts[groupIndex].midfielder++;
+            } else if (player.positionType === 'forward') {
+              positionCounts[groupIndex].forward++;
+            }
+            
+            anyPlayerAdded = true;
+          }
+        }
+        
+        // If no players were added in this round, we're done
+        if (!anyPlayerAdded) {
+          allPlayersDistributed = true;
+        }
+        
+        // Move to the next round
+        round++;
+        
+        // Safety check to prevent infinite loops
+        if (round > 100) {
+          console.warn('Safety break in distribution algorithm');
+          allPlayersDistributed = true;
+        }
       }
       
-      // Distribute forwards
-      while (forwards.length > 0) {
-        const groupIndex = findGroupNeedingPosition('forward', forwardRatio);
-        newGroups[groupIndex].push(forwards.shift()!);
-        positionCounts[groupIndex].forward++;
+      // If there are still players left, create new groups as needed
+      const remainingPlayers = [...defenders, ...midfielders, ...forwards];
+      
+      if (remainingPlayers.length > 0) {
+        // Create new groups as needed
+        while (remainingPlayers.length > 0) {
+          // Check if we need to create a new group
+          let targetGroupIndex = -1;
+          
+          // Find a group that isn't full
+          for (let i = 0; i < newGroups.length; i++) {
+            if (newGroups[i].length < playersPerGroup) {
+              targetGroupIndex = i;
+              break;
+            }
+          }
+          
+          // If all groups are full, create a new one
+          if (targetGroupIndex === -1) {
+            targetGroupIndex = addNewGroup();
+            positionCounts.push({
+              defender: 0,
+              midfielder: 0,
+              forward: 0
+            });
+          }
+          
+          // Add the player to the group
+          const player = remainingPlayers.shift()!;
+          newGroups[targetGroupIndex].push(player);
+          
+          // Update position counts
+          if (player.positionType === 'defender') {
+            positionCounts[targetGroupIndex].defender++;
+          } else if (player.positionType === 'midfielder') {
+            positionCounts[targetGroupIndex].midfielder++;
+          } else if (player.positionType === 'forward') {
+            positionCounts[targetGroupIndex].forward++;
+          }
+        }
       }
     };
+
     
     // Use the balanced distribution approach
     distributeBalanced();
