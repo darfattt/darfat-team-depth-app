@@ -211,38 +211,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     // Update the outfield player count for display
     setOutfieldPlayerCount(outfieldPlayers.length);
     
-    // Calculate position ratios based on playersPerGroup
-    // Default is 5 players per group with ratio 2:1:2 (defenders:midfielders:forwards)
-    let defenderRatio = 2;
-    let midfielderRatio = 1;
-    let forwardRatio = 2;
-
-    // Adjust ratios for different group sizes while maintaining approximate proportions
-    if (playersPerGroup === 6) {
-      defenderRatio = 2;  // 2 defenders
-      midfielderRatio = 2; // 2 midfielders
-      forwardRatio = 2;   // 2 forwards
-    } else if (playersPerGroup === 7) {
-      defenderRatio = 3;  // 3 defenders
-      midfielderRatio = 1; // 1 midfielder
-      forwardRatio = 3;   // 3 forwards
-    } else if (playersPerGroup === 8) {
-      defenderRatio = 3;  // 3 defenders
-      midfielderRatio = 2; // 2 midfielders
-      forwardRatio = 3;   // 3 forwards
-    } else if (playersPerGroup === 9) {
-      defenderRatio = 4;  // 4 defenders
-      midfielderRatio = 2; // 2 midfielders
-      forwardRatio = 3;   // 3 forwards
-    } else if (playersPerGroup === 10 || playersPerGroup === 11) {
-      defenderRatio = 4;  // 4 defenders
-      midfielderRatio = 3; // 3 midfielders
-      forwardRatio = 3;   // 3 forwards
-    } else if (playersPerGroup === 5) {
-      defenderRatio = 2;  // 2 defenders
-      midfielderRatio = 1; // 1 midfielder
-      forwardRatio = 2;   // 2 forwards
-    }
+   
     // Categorize players by position type and sort by rating within each category
     const defenders: GroupedPlayer[] = outfieldPlayers
       .filter(player => getPositionType(player.position) === 'defender')
@@ -289,7 +258,6 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     let newGroups: GroupedPlayer[][] = Array(possibleGroups).fill(null).map(() => []);
     
     // Maximum players per group is the playersPerGroup value
-    const maxPlayersPerGroup = playersPerGroup;
     
     // Helper function to find the group with the least players
     const findLeastPopulatedOrLowestRatedGroupIndex = () => {
@@ -353,12 +321,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       return validRatings > 0 ? totalRating / validRatings : 0;
     };
 
-    
-    // Helper function to add a new group
-    const addNewGroup = () => {
-      newGroups.push([]);
-      return newGroups.length - 1; // Return the index of the new group
-    };
+
     
     // Ensure balanced distribution by checking position counts in each group
     const distributeBalanced = () => {
