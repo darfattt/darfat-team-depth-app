@@ -28,11 +28,109 @@ interface GroupedPlayer {
 
 const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => {
   const [groups, setGroups] = useState<GroupedPlayer[][]>([]);
+  const [outfieldPlayerCount, setOutfieldPlayerCount] = useState<number>(0);
+  const [groupCount, setGroupCount] = useState<number>(0);
 
   useEffect(() => {
     // Only run distribution when players change or playersPerGroup changes
     distributePlayersIntoGroups();
   }, [players, playersPerGroup]);
+
+  // Function to balance group ratings by swapping players of the same position
+  const balanceGroupRatings = (groups: GroupedPlayer[][]): GroupedPlayer[][] => {
+    // If we have fewer than 2 groups, there's nothing to balance
+    if (groups.length < 2) return groups;
+    
+    // Calculate initial group ratings
+    const groupRatings = groups.map(group => calculateGroupRating(group));
+    
+    // Calculate the average rating across all groups
+    const averageRating = groupRatings.reduce((sum, rating) => sum + rating, 0) / groupRatings.length;
+    
+    // Track if we made any swaps in this iteration
+    let madeSwaps = true;
+    // Limit the number of iterations to prevent infinite loops
+    let iterations = 0;
+    const MAX_ITERATIONS = 10;
+    
+    while (madeSwaps && iterations < MAX_ITERATIONS) {
+      madeSwaps = false;
+      iterations++;
+      
+      // Calculate standard deviation to see how balanced the groups are
+      const initialStdDev = calculateStandardDeviation(groupRatings, averageRating);
+      
+      // Try swapping players between groups
+      for (let i = 0; i < groups.length; i++) {
+        for (let j = i + 1; j < groups.length; j++) {
+          // Skip if the groups already have very similar ratings (within 0.1)
+          if (Math.abs(groupRatings[i] - groupRatings[j]) < 0.1) continue;
+          
+          // Try swapping each player from group i with each player from group j
+          for (let playerI = 0; playerI < groups[i].length; playerI++) {
+            for (let playerJ = 0; playerJ < groups[j].length; playerJ++) {
+              // Only swap players of the same position
+              if (groups[i][playerI].positionType !== groups[j][playerJ].positionType) continue;
+              
+              // Simulate the swap
+              const tempPlayerI = groups[i][playerI];
+              const tempPlayerJ = groups[j][playerJ];
+              
+              // Temporarily swap players
+              groups[i][playerI] = tempPlayerJ;
+              groups[j][playerJ] = tempPlayerI;
+              
+              // Calculate new ratings after the swap
+              const newGroupRatingI = calculateGroupRating(groups[i]);
+              const newGroupRatingJ = calculateGroupRating(groups[j]);
+              
+              // Create a copy of the group ratings with the new values
+              const newGroupRatings = [...groupRatings];
+              newGroupRatings[i] = newGroupRatingI;
+              newGroupRatings[j] = newGroupRatingJ;
+              
+              // Calculate new standard deviation
+              const newStdDev = calculateStandardDeviation(newGroupRatings, averageRating);
+              
+              // If the swap improves balance (reduces standard deviation), keep it
+              if (newStdDev < initialStdDev) {
+                // Update the group ratings
+                groupRatings[i] = newGroupRatingI;
+                groupRatings[j] = newGroupRatingJ;
+                madeSwaps = true;
+                // Break out of the inner loops to start fresh with the new group configuration
+                break;
+              } else {
+                // Undo the swap if it doesn't improve balance
+                groups[i][playerI] = tempPlayerI;
+                groups[j][playerJ] = tempPlayerJ;
+              }
+            }
+            if (madeSwaps) break;
+          }
+          if (madeSwaps) break;
+        }
+        if (madeSwaps) break;
+      }
+    }
+    
+    return groups;
+  };
+  
+  // Helper function to calculate standard deviation
+  const calculateStandardDeviation = (values: number[], mean: number): number => {
+    const squaredDifferences = values.map(value => Math.pow(value - mean, 2));
+    const variance = squaredDifferences.reduce((sum, sqDiff) => sum + sqDiff, 0) / values.length;
+    return Math.sqrt(variance);
+  };
+  
+  // Helper function to calculate the average rating of a group
+  const calculateGroupRating = (group: GroupedPlayer[]): number => {
+    if (group.length === 0) return 0;
+    
+    const totalRating = group.reduce((sum, player) => sum + player.rating, 0);
+    return totalRating / group.length;
+  };
 
   // Function to classify position into broader categories
   const getPositionType = (position: string): 'defender' | 'midfielder' | 'forward' | 'goalkeeper' => {
@@ -105,7 +203,14 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
         }))
         .sort((a, b) => b.rating - a.rating);
     }
+    
+      // outfieldPlayers = players
+      //   .filter(player => getPositionType(player.position) !== 'goalkeeper')
+      //   .sort(() => 0.5 - Math.random());
 
+    // Update the outfield player count for display
+    setOutfieldPlayerCount(outfieldPlayers.length);
+    
     // Calculate position ratios based on playersPerGroup
     // Default is 5 players per group with ratio 2:1:2 (defenders:midfielders:forwards)
     let defenderRatio = 2;
@@ -429,9 +534,13 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     
     // Use the balanced distribution approach
     distributeBalanced();
-
-    // Set the final groups
+    
+    // Balance the group ratings by swapping players of the same position
+    newGroups = balanceGroupRatings(newGroups);
+    
+    // Update state with the new groups
     setGroups(newGroups);
+    setGroupCount(newGroups.length);
   };
 
   // Function to export groups to Excel
@@ -698,20 +807,25 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800"></h2>
-        <button 
-          onClick={exportToExcel}
-          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Print
-        </button>
+    <div className="mb-8">
+      <div className="flex justify-end items-center mb-4">
+        <div className="flex items-center">
+          <div className="text-sm text-gray-600 mr-4">
+            Distributing {outfieldPlayerCount} outfield players (excluding goalkeepers and scouts) into {groupCount} groups
+          </div>
+          <button 
+            onClick={exportToExcel}
+            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Print
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groups.map((group, groupIndex) => (
           <div key={`group-${groupIndex}-${group.length}`} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-gray-800 text-white px-4 py-2 font-medium flex justify-between items-center">

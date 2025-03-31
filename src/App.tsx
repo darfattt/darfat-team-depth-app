@@ -390,7 +390,6 @@ function App() {
                       <option value="8">8</option>
                       <option value="9">9</option>
                       <option value="10">10</option>
-                      <option value="11">11</option>
                     </select>
                   </div>
                 </div>
@@ -428,7 +427,7 @@ function App() {
 ) : (
   <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
     <p className="text-sm text-gray-600">
-      Showing all {filteredPlayers.length} players (no filters active) (and include goalkeepers)
+      Showing all {filteredPlayers.length} players (no filters active)
     </p>
   </div>
 )}
