@@ -22,7 +22,7 @@ const ensureArrayField = (field: any): string[] => {
 
 interface GroupedPlayer {
   player: Player;
-  positionType: 'defender' | 'midfielder' | 'forward';
+  positionType: 'defender' | 'midfielder' | 'forward' | 'goalkeeper';
   rating: number;
 }
 
@@ -39,8 +39,10 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     position = position.toUpperCase();
     if (position === 'GK') return 'goalkeeper';
     if (['LB', 'RB', 'CB', 'LCB', 'RCB'].includes(position)) return 'defender';
+    //if (['CAM', 'ST', 'LW', 'RW', 'LM', 'RM'].includes(position)) return 'forward';
     if (['CDM', 'CM','CAM'].includes(position)) return 'midfielder';
-    if (['CAM', 'ST', 'LW', 'RW', 'LM', 'RM'].includes(position)) return 'forward';
+    if (['ST', 'LW', 'RW', 'LM', 'RM'].includes(position)) return 'forward';
+
     
     // Default fallback based on first character
     if (position.startsWith('D')) return 'defender';
@@ -76,9 +78,33 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       setGroups([]);
       return;
     }
-
-    // Filter out goalkeepers
-    const outfieldPlayers = players.filter(player => getPositionType(player.position) !== 'goalkeeper');
+    //filter scouts
+    if(playersPerGroup < 11) {
+      const excludedNames = ['Hendra', 'Fadzri', 'Adhitia Putra Herawan'];
+      players = players.filter(player => !excludedNames.includes(player.name));
+    }
+    
+    // Filter out goalkeepers only if playersPerGroup < 11
+    let outfieldPlayers;
+    let goalkeepers: GroupedPlayer[] = [];
+    
+    if (playersPerGroup < 11) {
+      // For smaller groups, exclude goalkeepers
+      outfieldPlayers = players.filter(player => getPositionType(player.position) !== 'goalkeeper');
+    } else {
+      // For 11-player groups, include goalkeepers but separate them for distribution
+      outfieldPlayers = players.filter(player => getPositionType(player.position) !== 'goalkeeper');
+      
+      // Process goalkeepers separately
+      goalkeepers = players
+        .filter(player => getPositionType(player.position) === 'goalkeeper')
+        .map(player => ({
+          player,
+          positionType: 'goalkeeper' as const,
+          rating: calculatePlayerRating(player)
+        }))
+        .sort((a, b) => b.rating - a.rating);
+    }
 
     // Calculate position ratios based on playersPerGroup
     // Default is 5 players per group with ratio 2:1:2 (defenders:midfielders:forwards)
@@ -103,6 +129,14 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       defenderRatio = 4;  // 4 defenders
       midfielderRatio = 2; // 2 midfielders
       forwardRatio = 3;   // 3 forwards
+    } else if (playersPerGroup === 10 || playersPerGroup === 11) {
+      defenderRatio = 4;  // 4 defenders
+      midfielderRatio = 3; // 3 midfielders
+      forwardRatio = 3;   // 3 forwards
+    } else if (playersPerGroup === 5) {
+      defenderRatio = 2;  // 2 defenders
+      midfielderRatio = 1; // 1 midfielder
+      forwardRatio = 2;   // 2 forwards
     }
     // Categorize players by position type and sort by rating within each category
     const defenders: GroupedPlayer[] = outfieldPlayers
@@ -153,19 +187,6 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     const maxPlayersPerGroup = playersPerGroup;
     
     // Helper function to find the group with the least players
-    const findLeastPopulatedGroupIndex = () => {
-      let minIndex = 0;
-      let minCount = newGroups[0].length;
-      
-      for (let i = 1; i < newGroups.length; i++) {
-        if (newGroups[i].length < minCount) {
-          minCount = newGroups[i].length;
-          minIndex = i;
-        }
-      }
-      return minIndex;
-    };
-
     const findLeastPopulatedOrLowestRatedGroupIndex = () => {
       // Find groups with minimum number of players first
       let minCount = Number.MAX_SAFE_INTEGER;
@@ -208,7 +229,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       console.log(newGroups[lowestAvgRatingIndex]);
       return lowestAvgRatingIndex;
     };
-    
+
     // Helper function to calculate average rating of a group
     const calculateAverageRating = (group: GroupedPlayer[]) => {
       if (group.length === 0) return 0;
@@ -218,7 +239,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       
       for (const player of group) {
         // Check if the player object has a rating property
-        if (player && player.rating) {
+        if (player?.rating) {
           totalRating += player.rating;
           validRatings++;
         }
@@ -228,98 +249,155 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     };
 
     
-    // Helper function to check if we need to create a new group
-    const shouldCreateNewGroup = (playerType: GroupedPlayer[]) => {
-      // Check if all existing groups are at max capacity
-      const allGroupsFull = newGroups.every(group => group.length >= maxPlayersPerGroup);
-      
-      // Check if we have enough players left to justify a new group
-      const enoughPlayersLeft = playerType.length > 0;
-      
-      return allGroupsFull && enoughPlayersLeft;
-    };
-    
     // Helper function to add a new group
     const addNewGroup = () => {
       newGroups.push([]);
       return newGroups.length - 1; // Return the index of the new group
     };
     
-    // Distribute players with maximum group size constraint
-    const distributePlayersWithConstraint = (
-      players: GroupedPlayer[], 
-      startIndex: number, 
-      direction: number,
-      positionRatio: number
-    ) => {
-     
-      let groupIndex = startIndex;
-      let dir = direction; // 1 for forward, -1 for backward
+    // Ensure balanced distribution by checking position counts in each group
+    const distributeBalanced = () => {
+      // First, distribute players by position type to ensure each group has the right ratio
+      // We'll track how many of each position we've added to each group
+      let positionCounts = newGroups.map(() => ({
+        defender: 0,
+        midfielder: 0,
+        forward: 0
+      }));
       
-      for (let i = 0; i < positionRatio * possibleGroups; i++) {
-        if (players.length === 0) break;
-
-        if (!newGroups[groupIndex] ){continue;}
-        // Check if current group is at max capacity
-        if (newGroups[groupIndex].length >= maxPlayersPerGroup) {
-          // Find the group with the least players
-          const leastGroupIndex = findLeastPopulatedOrLowestRatedGroupIndex(); // orig findLeastPopulatedGroupIndex
-          // If all groups are at max capacity, create a new group
-          if (newGroups[leastGroupIndex].length >= maxPlayersPerGroup && shouldCreateNewGroup(players)) {
-            groupIndex = addNewGroup();
-          } else {
-            groupIndex = leastGroupIndex;
+      // If playersPerGroup is 11, distribute goalkeepers first (1 per group)
+      if (playersPerGroup === 11 && goalkeepers.length > 0) {
+        // Distribute goalkeepers first, one per group
+        for (let i = 0; i < Math.min(goalkeepers.length, newGroups.length); i++) {
+          newGroups[i].push(goalkeepers[i]);
+        }
+        
+        // If there are more goalkeepers than groups, distribute the rest to the least populated groups
+        if (goalkeepers.length > newGroups.length) {
+          const remainingGoalkeepers = goalkeepers.slice(newGroups.length);
+          while (remainingGoalkeepers.length > 0) {
+            const leastGroupIndex = findLeastPopulatedOrLowestRatedGroupIndex();
+            newGroups[leastGroupIndex].push(remainingGoalkeepers.shift()!);
           }
         }
-        
-        newGroups[groupIndex].push(players.shift()!);
-        
-      
-        // Move to next group using snake draft pattern
-        groupIndex += dir;
-        
-        // Reverse direction if we hit the end or beginning
-        if (groupIndex >= newGroups.length - 1 || groupIndex <= 0) {
-          dir *= -1;
-        }
       }
       
-      // Distribute any remaining players to the least populated groups
-      while (players.length > 0) {
-        // Check if we need to create a new group
-        if (shouldCreateNewGroup(players)) {
-          const newGroupIndex = addNewGroup();
-          newGroups[newGroupIndex].push(players.shift()!);
-        } else {
-          // Find the group with the least players
-          const leastGroupIndex = findLeastPopulatedGroupIndex();
-          newGroups[leastGroupIndex].push(players.shift()!);
+      // Helper function to update position counts when a new group is added
+      const updatePositionCounts = () => {
+        positionCounts = newGroups.map((group) => {
+          // Count the existing positions in this group
+          const counts = {
+            defender: 0,
+            midfielder: 0,
+            forward: 0
+          };
+          
+          group.forEach(player => {
+            if (player.positionType === 'defender') counts.defender++;
+            else if (player.positionType === 'midfielder') counts.midfielder++;
+            else if (player.positionType === 'forward') counts.forward++;
+          });
+          
+          return counts;
+        });
+      };
+      
+      // Helper function to add a new group and update position counts
+      const addNewGroupAndUpdateCounts = () => {
+        const newGroupIndex = addNewGroup();
+        // Add a new entry to position counts
+        positionCounts.push({
+          defender: 0,
+          midfielder: 0,
+          forward: 0
+        });
+        return newGroupIndex;
+      };
+      
+      // Helper function to find the group that needs more of a specific position
+      const findGroupNeedingPosition = (positionType: 'defender' | 'midfielder' | 'forward', targetRatio: number) => {
+        // Make sure position counts array is up to date with the number of groups
+        if (positionCounts.length < newGroups.length) {
+          updatePositionCounts();
         }
+        
+        // Find groups that haven't reached their target ratio for this position AND haven't reached max capacity
+        const eligibleGroups = positionCounts.map((counts, index) => {
+          const currentCount = counts[positionType];
+          const totalPlayersInGroup = newGroups[index].length;
+          return { 
+            index, 
+            currentCount,
+            totalPlayersInGroup
+          };
+        }).filter(group => {
+          return group.currentCount < targetRatio && group.totalPlayersInGroup < maxPlayersPerGroup;
+        });
+        
+        // If no eligible groups (all full or reached target ratio), check if we need to create a new group
+        if (eligibleGroups.length === 0) {
+          // Check if all groups are at max capacity
+          const allGroupsFull = newGroups.every(group => group.length >= maxPlayersPerGroup);
+          
+          if (allGroupsFull) {
+            // Create a new group and update position counts
+            return addNewGroupAndUpdateCounts();
+          }
+          
+          // Find the group with the least players that isn't full
+          const nonFullGroups = newGroups.map((group, index) => ({
+            index,
+            count: group.length
+          })).filter(group => group.count < maxPlayersPerGroup);
+          
+          if (nonFullGroups.length > 0) {
+            // Sort by count (ascending) to find the least populated group
+            nonFullGroups.sort((a, b) => a.count - b.count);
+            return nonFullGroups[0].index;
+          }
+          
+          // If we somehow get here, use the least populated or lowest rated group
+          return findLeastPopulatedOrLowestRatedGroupIndex();
+        }
+        
+        // Sort by current count (ascending) to prioritize groups with fewer of this position
+        eligibleGroups.sort((a, b) => {
+          // First prioritize by position count
+          if (a.currentCount !== b.currentCount) {
+            return a.currentCount - b.currentCount;
+          }
+          // Then by total players in group
+          return a.totalPlayersInGroup - b.totalPlayersInGroup;
+        });
+        
+        return eligibleGroups[0].index;
+      };
+      
+      // Distribute defenders
+      while (defenders.length > 0) {
+        const groupIndex = findGroupNeedingPosition('defender', defenderRatio);
+        newGroups[groupIndex].push(defenders.shift()!);
+        positionCounts[groupIndex].defender++;
+      }
+      
+      // Distribute midfielders
+      while (midfielders.length > 0) {
+        const groupIndex = findGroupNeedingPosition('midfielder', midfielderRatio);
+        newGroups[groupIndex].push(midfielders.shift()!);
+        positionCounts[groupIndex].midfielder++;
+      }
+      
+      // Distribute forwards
+      while (forwards.length > 0) {
+        const groupIndex = findGroupNeedingPosition('forward', forwardRatio);
+        newGroups[groupIndex].push(forwards.shift()!);
+        positionCounts[groupIndex].forward++;
       }
     };
     
-    // Distribute defenders
-    const distributeDefenders = () => {
-      distributePlayersWithConstraint(defenders, 0, 1, defenderRatio);
-    };
-    
-    // Distribute midfielders
-    const distributeMidfielders = () => {
-      distributePlayersWithConstraint(midfielders, newGroups.length - 1, -1, midfielderRatio);
-    };
-    
-    // Distribute forwards
-    const distributeForwards = () => {
-      distributePlayersWithConstraint(forwards, 0, 1, forwardRatio);
-    };
-    
-    // Distribute players
-    
-    distributeDefenders();
-    distributeMidfielders();
-    distributeForwards();
+    // Use the balanced distribution approach
+    distributeBalanced();
 
-    
     // Set the final groups
     setGroups(newGroups);
   };
@@ -434,7 +512,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
         .sort((a, b) => (b.player.scoutRecommendation ?? 0) - (a.player.scoutRecommendation ?? 0))
         .slice(0, 5);
       
-      topPlayers.forEach((player, index) => {
+      topPlayers.forEach((player) => {
         // Player row with summary
         const playerRow = worksheet.addRow([
           '',
@@ -545,11 +623,12 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
   };
 
   // Group header styles for each position type
-  const getPositionHeaderClass = (type: 'defender' | 'midfielder' | 'forward') => {
+  const getPositionHeaderClass = (type: 'defender' | 'midfielder' | 'forward' | 'goalkeeper') => {
     switch (type) {
       case 'defender': return 'bg-blue-100 text-blue-800';
       case 'midfielder': return 'bg-yellow-100 text-yellow-800';
       case 'forward': return 'bg-red-100 text-red-800';
+      case 'goalkeeper': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -600,7 +679,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
           Print
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {groups.map((group, groupIndex) => (
           <div key={`group-${groupIndex}-${group.length}`} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-gray-800 text-white px-4 py-2 font-medium flex justify-between items-center">
@@ -666,7 +745,9 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
                playersPerGroup === 6 ? '2' : 
                playersPerGroup === 7 ? '3' : 
                playersPerGroup === 8 ? '3' : 
-               playersPerGroup === 9 ? '4' : '2'} per group
+               playersPerGroup === 9 ? '4' : 
+               playersPerGroup === 10 ? '4' : 
+               playersPerGroup === 11 ? '4' : '2'} per group
             </p>
             <div className="text-sm text-blue-600 mt-1">
               LB, RB, CB, LCB, RCB and other defensive positions
@@ -679,7 +760,9 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
                playersPerGroup === 6 ? '2' : 
                playersPerGroup === 7 ? '1' : 
                playersPerGroup === 8 ? '2' : 
-               playersPerGroup === 9 ? '2' : '1'} per group
+               playersPerGroup === 9 ? '2' : 
+               playersPerGroup === 10 ? '3' : 
+               playersPerGroup === 11 ? '3' : '1'} per group
             </p>
             <div className="text-sm text-yellow-600 mt-1">
               CDM, CM, CAM and other midfield positions
@@ -692,19 +775,32 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
                playersPerGroup === 6 ? '2' : 
                playersPerGroup === 7 ? '3' : 
                playersPerGroup === 8 ? '3' : 
-               playersPerGroup === 9 ? '3' : '2'} per group
+               playersPerGroup === 9 ? '3' : 
+               playersPerGroup === 10 ? '3' : 
+               playersPerGroup === 11 ? '3' : '2'} per group
             </p>
             <div className="text-sm text-red-600 mt-1">
-              CAM, LM, RM, ST, LW, RW and other attacking positions
+              LM, RM, ST, LW, RW and other attacking positions
             </div>
           </div>
+          {playersPerGroup === 11 && (
+            <div className="bg-green-50 p-3 rounded-lg">
+              <h4 className="font-medium text-green-800">Goalkeepers</h4>
+              <p className="text-sm text-gray-600">
+                1 per group
+              </p>
+              <div className="text-sm text-green-600 mt-1">
+                GK
+              </div>
+            </div>
+          )}
         </div>
         <p className="text-sm text-gray-500 mt-3">
           Players are distributed to create balanced groups based on scout ratings, status, and experience.
           Groups are formed using a snake draft pattern to ensure fair distribution of talent across all teams.
           Each group has a maximum of {playersPerGroup} players. If a group reaches its maximum, players are
           distributed to the group with the least players or a new group is created if needed.
-          Goalkeepers are excluded from these groups.
+          Goalkeepers are excluded from these groups if playersPerGroup is less than 11. Scouts ('Hendra', 'Fadzri', 'Adhitia Putra Herawan') are also excluded from these groups if group less than 11 players.
         </p>
       </div>
     </div>
