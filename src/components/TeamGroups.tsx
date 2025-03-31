@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Player } from '../types';
 import StarRating from './StarRating';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 interface TeamGroupsProps {
   players: Player[];
@@ -52,7 +54,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
   // Calculate a score for a player based on multiple factors
   const calculatePlayerRating = (player: Player): number => {
     // Start with scout recommendation if available
-    let rating = player.scoutRecommendation || 0;
+    let rating = player.scoutRecommendation ?? 0;
     
     // Status can affect rating (e.g., HG players might be rated higher)
     const statuses = ensureArrayField(player.status);
@@ -322,6 +324,226 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     setGroups(newGroups);
   };
 
+  // Function to export groups to Excel
+  const exportToExcel = () => {
+    // Create a new workbook
+    const workbook = new ExcelJS.Workbook();
+    
+    // Process each group and create a sheet for it
+    groups.forEach((group, groupIndex) => {
+      // Calculate group total rating
+      const groupTotalRating = group.reduce((sum, p) => sum + p.rating, 0).toFixed(1);
+      
+      // Add a worksheet
+      const worksheet = workbook.addWorksheet(`Group ${groupIndex + 1}`);
+      
+      // Set column widths
+      worksheet.columns = [
+        { width: 5 },   // A - # column
+        { width: 25 },  // B - Name column
+        { width: 10 },  // C - Position column
+        { width: 15 },  // D - Status column
+        { width: 15 },  // E - Recommendation column
+        { width: 10 },  // F - Hadir column
+        { width: 10 },  // G - Height column
+        { width: 10 },  // H - Weight column
+        { width: 8 },   // I - Age column
+        { width: 15 }   // J - Scout Result column
+      ];
+      
+      // First section - Scout Name and Group Info
+      worksheet.addRow(['Scout Name:']);
+      worksheet.addRow([`(Group ${groupIndex + 1})`, null, `(Group Rating: ${groupTotalRating})`]);
+      
+      // First table headers
+      const headerRow = worksheet.addRow(['#', 'Name', 'Pos', 'Status', 'Rec', 'Hadir', 'Height', 'Weight', 'Age', 'Scouting Result']);
+      
+      // Style header row
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFD3D3D3' } // Light gray background
+        };
+      });
+      
+      // First table data rows
+      group.forEach((groupedPlayer, index) => {
+        const statuses = ensureArrayField(groupedPlayer.player.status);
+        const displayStatus = statuses.length > 0 ? statuses[0] : '-';
+        
+        const dataRow = worksheet.addRow([
+          index + 1,
+          groupedPlayer.player.name,
+          groupedPlayer.player.position,
+          displayStatus,
+          groupedPlayer.player.scoutRecommendation ?? 0,
+          '', // Hadir column (empty)
+          groupedPlayer.player.height ?? '', // Height
+          groupedPlayer.player.weight ?? '', // Weight
+          groupedPlayer.player.age ?? '', // Age
+          '' // Scout Result (empty)
+        ]);
+        
+        // Add borders to data cells
+        dataRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+      
+      // Empty row between tables
+      worksheet.addRow(['', '', '', '', '', '', '', '', '']);
+      
+      // Second section - Scouting Result
+      const scoutingHeader = worksheet.addRow(['Scouting Result']);
+      scoutingHeader.getCell(1).font = { bold: true };
+      
+      // Second table headers
+      const secondHeaderRow = worksheet.addRow(['Num', 'Name', '', '', '', '', '', '', '', 'Summary']);
+      
+      // Style second header row
+      secondHeaderRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFD3D3D3' } // Light gray background
+        };
+      });
+      
+      // Second table data - Top 5 players by rating
+      const topPlayers = [...group]
+        .sort((a, b) => (b.player.scoutRecommendation ?? 0) - (a.player.scoutRecommendation ?? 0))
+        .slice(0, 5);
+      
+      topPlayers.forEach((player, index) => {
+        // Player row with summary
+        const playerRow = worksheet.addRow([
+          '',
+          player.player.name,
+          '', '', '', '', '', '', '',
+          'Summary'
+        ]);
+        
+        // Add borders to player row
+        playerRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+        
+        // Store the current row number for merging later
+        const startRowIndex = worksheet.rowCount;
+        
+        // Add empty rows for each player (as in the sample)
+        for (let i = 0; i < 3; i++) {
+          const emptyRow = worksheet.addRow(['', '', '', '', '', '', '', '', '', '']);
+          
+          // Add borders to empty rows
+          emptyRow.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+          });
+        }
+        
+        // Calculate the end row index
+        const endRowIndex = worksheet.rowCount;
+        
+        // Merge cells in column A (Num) for this player
+        worksheet.mergeCells(startRowIndex, 1, endRowIndex, 1);
+        
+        // Style the merged Num cell
+        const mergedNumCell = worksheet.getCell(`A${startRowIndex}`);
+        mergedNumCell.value = ''; // Set the player number
+        mergedNumCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+        mergedNumCell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        // Merge cells in column B (Name) for this player
+        worksheet.mergeCells(startRowIndex, 2, endRowIndex, 2);
+        
+        // Style the merged Name cell
+        const mergedNameCell = worksheet.getCell(`B${startRowIndex}`);
+        mergedNameCell.value = player.player.name;
+        mergedNameCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+        mergedNameCell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        // Merge cells in column J (Summary) for this player
+        worksheet.mergeCells(startRowIndex, 10, endRowIndex, 10);
+        
+        // Style the merged Summary cell
+        const mergedSummaryCell = worksheet.getCell(`J${startRowIndex}`);
+        mergedSummaryCell.value = '';
+        mergedSummaryCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+        mergedSummaryCell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+
+      // Apply borders to all cells in the first table
+      for (let i = 3; i < 3 + group.length; i++) {
+        for (let j = 1; j <= 10; j++) {
+          const cell = worksheet.getCell(i, j);
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        }
+      }
+    });
+    
+    // Generate Excel file
+    workbook.xlsx.writeBuffer().then(buffer => {
+      const fileData = new Blob([buffer], { type: 'application/octet-stream' });
+      
+      // Get current date for filename
+      const date = new Date();
+      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      
+      // Save file
+      saveAs(fileData, `Team_Groups_${formattedDate}.xlsx`);
+    });
+  };
+
   // Group header styles for each position type
   const getPositionHeaderClass = (type: 'defender' | 'midfielder' | 'forward') => {
     switch (type) {
@@ -366,9 +588,21 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800"></h2>
+        <button 
+          onClick={exportToExcel}
+          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded flex items-center"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Print
+        </button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {groups.map((group, groupIndex) => (
-          <div key={`group-${groupIndex}`} className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div key={`group-${groupIndex}-${group.length}`} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-gray-800 text-white px-4 py-2 font-medium flex justify-between items-center">
               <span>Group {groupIndex + 1}</span>
               <span className="text-sm bg-gray-700 px-2 py-1 rounded">
@@ -388,7 +622,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {group.map((groupedPlayer, index) => (
-                    <tr key={`player-${groupedPlayer.player.id}`}>
+                    <tr key={`player-${groupedPlayer.player.id}-${groupIndex}`}>
                       <td className="px-2 py-2 whitespace-nowrap">{index + 1}</td>
                       <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900">
                         {groupedPlayer.player.name}
@@ -411,7 +645,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
                         </div>
                       </td>
                       <td className="px-2 py-2 whitespace-nowrap">
-                        <StarRating rating={groupedPlayer.player.scoutRecommendation || 0} size="sm" />
+                        <StarRating rating={groupedPlayer.player.scoutRecommendation ?? 0} size="sm" />
                       </td>
                     </tr>
                   ))}
