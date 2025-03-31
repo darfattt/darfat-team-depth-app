@@ -412,7 +412,10 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       
       // Helper function to get the next available player of the specified position
       // If no player of the requested position is available, try the fallback sequence
-      const getNextPlayer = (preferredPosition: 'defender' | 'midfielder' | 'forward'): GroupedPlayer | null => {
+      const getNextPlayer = (preferredPosition: 'defender' | 'midfielder' | 'forward', groupIndex: number): GroupedPlayer | null => {
+        // Get current position counts for this group
+        const currentCounts = positionCounts[groupIndex];
+        
         // Try to get a player of the preferred position
         if (preferredPosition === 'defender' && defenders.length > 0) {
           return defenders.shift()!;
@@ -422,17 +425,91 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
           return forwards.shift()!;
         }
         
-        // If preferred position is not available, follow fallback sequence: defender > midfielder > forward
-        if (defenders.length > 0) {
-          return defenders.shift()!;
-        } else if (midfielders.length > 0) {
-          return midfielders.shift()!;
-        } else if (forwards.length > 0) {
-          return forwards.shift()!;
+        // If preferred position is not available, check which position is most needed in this group
+        // based on the target ratio for this group size
+        
+        // Calculate current ratio of positions in the group
+        const totalPlayers = currentCounts.defender + currentCounts.midfielder + currentCounts.forward;
+        if (totalPlayers === 0) {
+          // If group is empty, follow standard fallback sequence
+          if (defenders.length > 0) return defenders.shift()!;
+          if (midfielders.length > 0) return midfielders.shift()!;
+          if (forwards.length > 0) return forwards.shift()!;
+          return null;
         }
+        
+        // Calculate current percentages
+        const defenderPercent = currentCounts.defender / totalPlayers;
+        const midfielderPercent = currentCounts.midfielder / totalPlayers;
+        const forwardPercent = currentCounts.forward / totalPlayers;
+        
+        // Determine target percentages based on playersPerGroup
+        let defenderTarget = 0.4; // Default: 40% defenders
+        let midfielderTarget = 0.2; // Default: 20% midfielders
+        let forwardTarget = 0.4; // Default: 40% forwards
+        
+        if (playersPerGroup === 6) {
+          defenderTarget = 1/3; // 33.3% defenders
+          midfielderTarget = 1/3; // 33.3% midfielders
+          forwardTarget = 1/3; // 33.3% forwards
+        } else if (playersPerGroup === 7) {
+          defenderTarget = 3/7; // ~42.9% defenders
+          midfielderTarget = 1/7; // ~14.3% midfielders
+          forwardTarget = 3/7; // ~42.9% forwards
+        } else if (playersPerGroup === 8) {
+          defenderTarget = 3/8; // 37.5% defenders
+          midfielderTarget = 2/8; // 25% midfielders
+          forwardTarget = 3/8; // 37.5% forwards
+        } else if (playersPerGroup === 9) {
+          defenderTarget = 4/9; // ~44.4% defenders
+          midfielderTarget = 2/9; // ~22.2% midfielders
+          forwardTarget = 3/9; // ~33.3% forwards
+        } else if (playersPerGroup === 10 || playersPerGroup === 11) {
+          defenderTarget = 4/10; // 40% defenders
+          midfielderTarget = 3/10; // 30% midfielders
+          forwardTarget = 3/10; // 30% forwards
+        }
+        
+        // Calculate how far each position is from its target ratio
+        const defenderDiff = defenderTarget - defenderPercent;
+        const midfielderDiff = midfielderTarget - midfielderPercent;
+        const forwardDiff = forwardTarget - forwardPercent;
+        
+        // Find the position that's furthest below its target ratio
+        const diffs = [
+          { position: 'defender', diff: defenderDiff, available: defenders.length > 0 },
+          { position: 'midfielder', diff: midfielderDiff, available: midfielders.length > 0 },
+          { position: 'forward', diff: forwardDiff, available: forwards.length > 0 }
+        ].filter(p => p.available);
+        
+        // Sort by difference (highest difference first)
+        diffs.sort((a, b) => b.diff - a.diff);
+        
+        // If we have available positions, pick the one that's most needed
+        if (diffs.length > 0) {
+          const bestPosition = diffs[0].position;
+          if (bestPosition === 'defender' && defenders.length > 0) {
+            return defenders.shift()!;
+          } else if (bestPosition === 'midfielder' && midfielders.length > 0) {
+            return midfielders.shift()!;
+          } else if (bestPosition === 'forward' && forwards.length > 0) {
+            return forwards.shift()!;
+          }
+        }
+        
+        // If we still don't have a player, take any available player
+        if (defenders.length > 0) return defenders.shift()!;
+        if (midfielders.length > 0) return midfielders.shift()!;
+        if (forwards.length > 0) return forwards.shift()!;
         
         // No players available
         return null;
+      };
+      
+      // Helper function to add a new group
+      const addNewGroup = () => {
+        newGroups.push([]);
+        return newGroups.length - 1; // Return the index of the new group
       };
       
       // Distribute players in rounds according to the pattern
@@ -454,7 +531,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
           const positionToAdd = distributionPattern[positionIndex];
           
           // Try to get a player of the specified position
-          const player = getNextPlayer(positionToAdd);
+          const player = getNextPlayer(positionToAdd, groupIndex);
           
           // If a player was found, add them to the group
           if (player) {
