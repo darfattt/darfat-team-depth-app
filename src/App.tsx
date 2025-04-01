@@ -15,6 +15,9 @@ type TeamColor = typeof teamColors[number];
 // Check if running in local development mode
 const IS_LOCAL_MODE = import.meta.env?.MODE === 'development';
 
+// App version
+const APP_VERSION = '1.0.0';
+
 // Define Filters type here since it's used in App.tsx
 export interface Filters {
   position: string;
@@ -455,7 +458,7 @@ function App() {
       </div>
 
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Expose Team Depth Chart
+        &copy; {new Date().getFullYear()} Expose Team Depth Chart | Version {APP_VERSION}
       </footer>
     </div>
   )

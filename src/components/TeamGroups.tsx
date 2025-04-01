@@ -137,7 +137,6 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     position = position.toUpperCase();
     if (position === 'GK') return 'goalkeeper';
     if (['LB', 'RB', 'CB', 'LCB', 'RCB'].includes(position)) return 'defender';
-    //if (['CAM', 'ST', 'LW', 'RW', 'LM', 'RM'].includes(position)) return 'forward';
     if (['CDM', 'CM','CAM'].includes(position)) return 'midfielder';
     if (['ST', 'LW', 'RW', 'LM', 'RM'].includes(position)) return 'forward';
 
@@ -666,14 +665,18 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       worksheet.addRow(['', '', '', '', '', '', '', '', '']);
       
       // Second section - Scouting Result
+      worksheet.addRow(['', '', '', '', '', '', '', '', '']);
       const scoutingHeader = worksheet.addRow(['Scouting Result']);
       scoutingHeader.getCell(1).font = { bold: true };
       
       // Second table headers
-      const secondHeaderRow = worksheet.addRow(['Num', 'Name', '', '', '', '', '', '', '', 'Summary']);
+      const headerRow2 = worksheet.addRow(['Num', 'Name', '', '', '', '', '', '', '', 'Summary']);
       
-      // Style second header row
-      secondHeaderRow.eachCell((cell) => {
+      // Merge columns I-J in the header row
+      worksheet.mergeCells(worksheet.rowCount, 8, worksheet.rowCount, 9);
+      
+      // Style header row
+      headerRow2.eachCell((cell) => {
         cell.font = { bold: true };
         cell.border = {
           top: { style: 'thin' },
@@ -686,24 +689,21 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
           pattern: 'solid',
           fgColor: { argb: 'FFD3D3D3' } // Light gray background
         };
+        cell.alignment = { horizontal: 'center' };
       });
       
-      // Second table data - Top 5 players by rating
-      const topPlayers = [...group]
-        .sort((a, b) => (b.player.scoutRecommendation ?? 0) - (a.player.scoutRecommendation ?? 0))
-        .slice(0, 5);
+      // Second table data - Use the same player order as the first table
+      const playersForScoutingResult = [...group].slice(0, 5);
       
-      topPlayers.forEach((player) => {
-        // Player row with summary
-        const playerRow = worksheet.addRow([
-          '',
-          player.player.name,
-          '', '', '', '', '', '', '',
-          'Summary'
-        ]);
+      playersForScoutingResult.forEach((player, index) => {
+        // First row for player - Name and Technical
+        const row1 = worksheet.addRow(['', player.player.name, 'Technical', '', 'Defensive Skills', '', 'Teamwork', '', '', '']);
         
-        // Add borders to player row
-        playerRow.eachCell((cell) => {
+        // Second row for player - Tactical and Physical
+        const row2 = worksheet.addRow(['', '', 'Tactical', '', 'Physical', '', 'Impact', '', '', '']);
+        
+        // Add borders to all cells
+        row1.eachCell((cell) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -712,83 +712,73 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
           };
         });
         
-        // Store the current row number for merging later
-        const startRowIndex = worksheet.rowCount;
-        
-        // Add empty rows for each player (as in the sample)
-        for (let i = 0; i < 3; i++) {
-          const emptyRow = worksheet.addRow(['', '', '', '', '', '', '', '', '', '']);
-          
-          // Add borders to empty rows
-          emptyRow.eachCell((cell) => {
-            cell.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' }
-            };
-          });
-        }
-        
-        // Calculate the end row index
-        const endRowIndex = worksheet.rowCount;
-        
-        // Merge cells in column A (Num) for this player
-        worksheet.mergeCells(startRowIndex, 1, endRowIndex, 1);
-        
-        // Style the merged Num cell
-        const mergedNumCell = worksheet.getCell(`A${startRowIndex}`);
-        mergedNumCell.value = ''; // Set the player number
-        mergedNumCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-        mergedNumCell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        
-        // Merge cells in column B (Name) for this player
-        worksheet.mergeCells(startRowIndex, 2, endRowIndex, 2);
-        
-        // Style the merged Name cell
-        const mergedNameCell = worksheet.getCell(`B${startRowIndex}`);
-        mergedNameCell.value = player.player.name;
-        mergedNameCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-        mergedNameCell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        
-        // Merge cells in column J (Summary) for this player
-        worksheet.mergeCells(startRowIndex, 10, endRowIndex, 10);
-        
-        // Style the merged Summary cell
-        const mergedSummaryCell = worksheet.getCell(`J${startRowIndex}`);
-        mergedSummaryCell.value = '';
-        mergedSummaryCell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-        mergedSummaryCell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-      });
-
-      // Apply borders to all cells in the first table
-      for (let i = 3; i < 3 + group.length; i++) {
-        for (let j = 1; j <= 10; j++) {
-          const cell = worksheet.getCell(i, j);
+        row2.eachCell((cell) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' }
           };
+        });
+        
+        // Get current row numbers
+        const nameRowIndex = worksheet.rowCount - 1;
+        const tacticalRowIndex = worksheet.rowCount;
+        
+        // Merge the Num cell vertically for both rows
+        worksheet.mergeCells(nameRowIndex, 1, tacticalRowIndex, 1);
+        
+        // Merge the Name cell vertically for both rows
+        worksheet.mergeCells(nameRowIndex, 2, tacticalRowIndex, 2);
+        
+        // Merge the Summary cell vertically for both rows
+        worksheet.mergeCells(nameRowIndex, 10, tacticalRowIndex, 10);
+        
+        // Style the merged cells
+        const numCell = worksheet.getCell(`A${nameRowIndex}`);
+        numCell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        const nameCell = worksheet.getCell(`B${nameRowIndex}`);
+        nameCell.alignment = { vertical: 'middle', horizontal: 'left' };
+        nameCell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        const summaryCell = worksheet.getCell(`J${nameRowIndex}`);
+        summaryCell.border = {
+          top: { style: 'thin' },
+         left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        
+        // Add empty row after each player (except the last one)
+        if (index < playersForScoutingResult.length - 1) {
+          const emptyRow = worksheet.addRow([]);
+          emptyRow.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+             // left: { style: 'thin' },
+              bottom: { style: 'thin' },
+             // right: { style: 'thin' }
+            };
+          });
         }
-      }
+      });
+      worksheet.addRow([]);
+      worksheet.addRow(['Rating Info : ']);
+      worksheet.addRow(['1 (Not Recommended), 2 (Standar), 3 (Give a Chance), 4 (Great), 5 (Perfect Fit!)']);
     });
+    
+
     
     // Generate Excel file
     workbook.xlsx.writeBuffer().then(buffer => {
