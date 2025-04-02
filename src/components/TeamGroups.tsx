@@ -59,58 +59,138 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       
       // Calculate standard deviation to see how balanced the groups are
       const initialStdDev = calculateStandardDeviation(groupRatings, averageRating);
+      console.log('Initial Std Dev:', initialStdDev);
       
-      // Try swapping players between groups
-      for (let i = 0; i < groups.length; i++) {
-        for (let j = i + 1; j < groups.length; j++) {
-          // Skip if the groups already have very similar ratings (within 0.1)
-          if (Math.abs(groupRatings[i] - groupRatings[j]) < 0.1) continue;
+      // Create an array of group indices sorted by rating (lowest first)
+      const sortedGroupIndices = groupRatings
+        .map((rating, index) => ({ rating, index }))
+        .sort((a, b) => a.rating - b.rating)
+        .map(item => item.index);
+      
+      console.log('Groups sorted by rating (lowest first):', sortedGroupIndices.map(idx => groupRatings[idx]));
+      
+      // Try swapping players between the weakest groups and the strongest groups
+      // This creates pairs where we try to balance the weakest with the strongest
+      for (let weakIdx = 0; weakIdx < Math.floor(sortedGroupIndices.length / 2); weakIdx++) {
+        // Get the index of the weak group
+        const i = sortedGroupIndices[weakIdx];
+        
+        // Get the index of the corresponding strong group from the other end of the sorted array
+        const strongIdx = sortedGroupIndices.length - 1 - weakIdx;
+        const j = sortedGroupIndices[strongIdx];
+        
+        console.log(`Trying to balance weak group ${i} (rating: ${groupRatings[i]}) with strong group ${j} (rating: ${groupRatings[j]})`);
+        
+        // Skip if the groups already have very similar ratings (within 0.1)
+        if (Math.abs(groupRatings[i] - groupRatings[j]) < 0.1) continue;
+        
+        // Try swapping each player from group i with each player from group j
+        for (let playerI = 0; playerI < groups[i].length; playerI++) {
+          for (let playerJ = 0; playerJ < groups[j].length; playerJ++) {
+            // Only swap players of the same position
+            if (groups[i][playerI].positionType !== groups[j][playerJ].positionType) continue;
+            
+            // Simulate the swap
+            const tempPlayerI = groups[i][playerI];
+            const tempPlayerJ = groups[j][playerJ];
+            
+            // Temporarily swap players
+            groups[i][playerI] = tempPlayerJ;
+            groups[j][playerJ] = tempPlayerI;
+            
+            // Calculate new ratings after the swap
+            const newGroupRatingI = calculateGroupRating(groups[i]);
+            const newGroupRatingJ = calculateGroupRating(groups[j]);
+            
+            // Create a copy of the group ratings with the new values
+            const newGroupRatings = [...groupRatings];
+            newGroupRatings[i] = newGroupRatingI;
+            newGroupRatings[j] = newGroupRatingJ;
+            
+            // Calculate new standard deviation
+            const newStdDev = calculateStandardDeviation(newGroupRatings, averageRating);
+            
+            // If the swap improves balance (reduces standard deviation), keep it
+            if (newStdDev < initialStdDev) {
+              // Update the group ratings
+              groupRatings[i] = newGroupRatingI;
+              groupRatings[j] = newGroupRatingJ;
+              madeSwaps = true;
+              // Break out of the inner loops to start fresh with the new group configuration
+              break;
+            } else {
+              // Undo the swap if it doesn't improve balance
+              groups[i][playerI] = tempPlayerI;
+              groups[j][playerJ] = tempPlayerJ;
+            }
+          }
+          if (madeSwaps) break;
+        }
+        if (madeSwaps) break;
+      }
+      
+      // If no swaps were made with the weak-strong pairing, try all other combinations
+      if (!madeSwaps) {
+        console.log("No improvements with weak-strong pairing, trying all combinations...");
+        
+        for (let iIdx = 0; iIdx < sortedGroupIndices.length; iIdx++) {
+          const i = sortedGroupIndices[iIdx];
           
-          // Try swapping each player from group i with each player from group j
-          for (let playerI = 0; playerI < groups[i].length; playerI++) {
-            for (let playerJ = 0; playerJ < groups[j].length; playerJ++) {
-              // Only swap players of the same position
-              if (groups[i][playerI].positionType !== groups[j][playerJ].positionType) continue;
-              
-              // Simulate the swap
-              const tempPlayerI = groups[i][playerI];
-              const tempPlayerJ = groups[j][playerJ];
-              
-              // Temporarily swap players
-              groups[i][playerI] = tempPlayerJ;
-              groups[j][playerJ] = tempPlayerI;
-              
-              // Calculate new ratings after the swap
-              const newGroupRatingI = calculateGroupRating(groups[i]);
-              const newGroupRatingJ = calculateGroupRating(groups[j]);
-              
-              // Create a copy of the group ratings with the new values
-              const newGroupRatings = [...groupRatings];
-              newGroupRatings[i] = newGroupRatingI;
-              newGroupRatings[j] = newGroupRatingJ;
-              
-              // Calculate new standard deviation
-              const newStdDev = calculateStandardDeviation(newGroupRatings, averageRating);
-              
-              // If the swap improves balance (reduces standard deviation), keep it
-              if (newStdDev < initialStdDev) {
-                // Update the group ratings
-                groupRatings[i] = newGroupRatingI;
-                groupRatings[j] = newGroupRatingJ;
-                madeSwaps = true;
-                // Break out of the inner loops to start fresh with the new group configuration
-                break;
-              } else {
-                // Undo the swap if it doesn't improve balance
-                groups[i][playerI] = tempPlayerI;
-                groups[j][playerJ] = tempPlayerJ;
+          for (let jIdx = 0; jIdx < sortedGroupIndices.length; jIdx++) {
+            // Skip comparing a group with itself
+            if (iIdx === jIdx) continue;
+            
+            const j = sortedGroupIndices[jIdx];
+            
+            // Skip if the groups already have very similar ratings (within 0.1)
+            if (Math.abs(groupRatings[i] - groupRatings[j]) < 0.1) continue;
+            
+            // Try swapping each player from group i with each player from group j
+            for (let playerI = 0; playerI < groups[i].length; playerI++) {
+              for (let playerJ = 0; playerJ < groups[j].length; playerJ++) {
+                // Only swap players of the same position
+                if (groups[i][playerI].positionType !== groups[j][playerJ].positionType) continue;
+                
+                // Simulate the swap
+                const tempPlayerI = groups[i][playerI];
+                const tempPlayerJ = groups[j][playerJ];
+                
+                // Temporarily swap players
+                groups[i][playerI] = tempPlayerJ;
+                groups[j][playerJ] = tempPlayerI;
+                
+                // Calculate new ratings after the swap
+                const newGroupRatingI = calculateGroupRating(groups[i]);
+                const newGroupRatingJ = calculateGroupRating(groups[j]);
+                
+                // Create a copy of the group ratings with the new values
+                const newGroupRatings = [...groupRatings];
+                newGroupRatings[i] = newGroupRatingI;
+                newGroupRatings[j] = newGroupRatingJ;
+                
+                // Calculate new standard deviation
+                const newStdDev = calculateStandardDeviation(newGroupRatings, averageRating);
+                
+                // If the swap improves balance (reduces standard deviation), keep it
+                if (newStdDev < initialStdDev) {
+                  // Update the group ratings
+                  groupRatings[i] = newGroupRatingI;
+                  groupRatings[j] = newGroupRatingJ;
+                  madeSwaps = true;
+                  // Break out of the inner loops to start fresh with the new group configuration
+                  break;
+                } else {
+                  // Undo the swap if it doesn't improve balance
+                  groups[i][playerI] = tempPlayerI;
+                  groups[j][playerJ] = tempPlayerJ;
+                }
               }
+              if (madeSwaps) break;
             }
             if (madeSwaps) break;
           }
           if (madeSwaps) break;
         }
-        if (madeSwaps) break;
       }
     }
     
@@ -175,6 +255,8 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       setGroups([]);
       return;
     }
+    //sorted
+    players = [...players].sort((a, b) => (a.scoutRecommendation ?? 0) - (b.scoutRecommendation ?? 0));
     //filter scouts
     if(playersPerGroup < 11) {
       const excludedNames = ['Hendra', 'Fadzri', 'Adhitia Putra Herawan'];
@@ -212,6 +294,15 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     
    
     // Categorize players by position type and sort by rating within each category
+    const getStatusPriority = (player: Player) => {
+      const status = Array.isArray(player.status) ? player.status : [player.status];
+      
+      // Check if status contains specific values
+      if (status.some(s => s?.includes('Unknown'))) return 1;
+      if (status.some(s => s?.includes('Player To Watch'))) return 2;
+      return 3; // Other statuses
+    };
+
     const defenders: GroupedPlayer[] = outfieldPlayers
       .filter(player => getPositionType(player.position) === 'defender')
       .map(player => ({
@@ -219,7 +310,18 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
         positionType: 'defender' as const,
         rating: calculatePlayerRating(player)
       }))
-      .sort((a, b) => b.rating - a.rating);
+      .sort((a, b) => {
+        // First sort by status priority
+        const statusPriorityA = getStatusPriority(a.player);
+        const statusPriorityB = getStatusPriority(b.player);
+        
+        if (statusPriorityA !== statusPriorityB) {
+          return statusPriorityA - statusPriorityB;
+        }
+        
+        // Then sort by rating (higher rating first)
+        return b.rating - a.rating;
+      });
 
     const midfielders: GroupedPlayer[] = outfieldPlayers
       .filter(player => getPositionType(player.position) === 'midfielder')
@@ -228,7 +330,18 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
         positionType: 'midfielder' as const,
         rating: calculatePlayerRating(player)
       }))
-      .sort((a, b) => b.rating - a.rating);
+      .sort((a, b) => {
+        // First sort by status priority
+        const statusPriorityA = getStatusPriority(a.player);
+        const statusPriorityB = getStatusPriority(b.player);
+        
+        if (statusPriorityA !== statusPriorityB) {
+          return statusPriorityA - statusPriorityB;
+        }
+        
+        // Then sort by rating (higher rating first)
+        return b.rating - a.rating;
+      });
 
     const forwards: GroupedPlayer[] = outfieldPlayers
       .filter(player => getPositionType(player.position) === 'forward')
@@ -237,8 +350,19 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
         positionType: 'forward' as const,
         rating: calculatePlayerRating(player)
       }))
-      .sort((a, b) => b.rating - a.rating);
-
+      .sort((a, b) => {
+        // First sort by status priority
+        const statusPriorityA = getStatusPriority(a.player);
+        const statusPriorityB = getStatusPriority(b.player);
+        
+        if (statusPriorityA !== statusPriorityB) {
+          return statusPriorityA - statusPriorityB;
+        }
+        
+        // Then sort by rating (higher rating first)
+        return b.rating - a.rating;
+      });
+    
     // Calculate how many groups we can form
     // The limiting factor is the position with fewest players relative to how many we need per group
     // const defenderGroups = Math.floor(defenders.length / defenderRatio);
@@ -258,48 +382,55 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     
     // Maximum players per group is the playersPerGroup value
     
-    // Helper function to find the group with the least players
+    // Helper function to find the group with the lowest average rating
     const findLeastPopulatedOrLowestRatedGroupIndex = () => {
-      // Find groups with minimum number of players first
-      let minCount = Number.MAX_SAFE_INTEGER;
-      let groupsWithMinCount = [];
-      
-      // Step 1: Find the minimum count
-      for (let i = 0; i < newGroups.length; i++) {
-        if (newGroups[i].length < minCount) {
-          minCount = newGroups[i].length;
-        }
-      }
-      
-      // Step 2: Collect all groups with that minimum count
-      for (let i = 0; i < newGroups.length; i++) {
-        if (newGroups[i].length === minCount) {
-          groupsWithMinCount.push(i);
-        }
-      }
-      
-      // If there's only one group with minimum count, return it
-      if (groupsWithMinCount.length === 1) {
-        console.log(newGroups[groupsWithMinCount[0]]);
-        return groupsWithMinCount[0];
-      }
-      
-      // Step 3: Among tied groups, find the one with lowest average rating
-      let lowestAvgRatingIndex = groupsWithMinCount[0];
-      let lowestAvgRating = calculateAverageRating(newGroups[lowestAvgRatingIndex]);
-      
-      for (let i = 1; i < groupsWithMinCount.length; i++) {
-        const currentIndex = groupsWithMinCount[i];
-        const currentAvgRating = calculateAverageRating(newGroups[currentIndex]);
+      // Find groups with lowest average rating first
+      let lowestAvgRatingIndex = 0;
+      let lowestAvgRating = calculateAverageRating(newGroups[0]);
+      console.log({lowestAvgRating})
+
+      // Step 1: Find the group with the lowest average rating
+      for (let i = 1; i < newGroups.length; i++) {
+        const currentAvgRating = calculateAverageRating(newGroups[i]);
         
         if (currentAvgRating < lowestAvgRating) {
           lowestAvgRating = currentAvgRating;
-          lowestAvgRatingIndex = currentIndex;
+          lowestAvgRatingIndex = i;
+        }
+        console.log({currentAvgRating})
+      }
+      
+      // If there are multiple groups with the same lowest rating, use player count as tiebreaker
+      let groupsWithLowestRating = [];
+      
+      for (let i = 0; i < newGroups.length; i++) {
+        if (Math.abs(calculateAverageRating(newGroups[i]) - lowestAvgRating) < 0.001) {
+          groupsWithLowestRating.push(i);
         }
       }
       
-      console.log(newGroups[lowestAvgRatingIndex]);
-      return lowestAvgRatingIndex;
+      // If there's only one group with lowest rating, return it
+      if (groupsWithLowestRating.length === 1) {
+        console.log(newGroups[lowestAvgRatingIndex]);
+        return lowestAvgRatingIndex;
+      }
+      
+      // Step 2: Among tied groups with same rating, find the one with minimum player count
+      let minCountIndex = groupsWithLowestRating[0];
+      let minCount = newGroups[minCountIndex].length;
+      
+      for (let i = 1; i < groupsWithLowestRating.length; i++) {
+        const currentIndex = groupsWithLowestRating[i];
+        const currentCount = newGroups[currentIndex].length;
+        
+        if (currentCount < minCount) {
+          minCount = currentCount;
+          minCountIndex = currentIndex;
+        }
+      }
+      
+      console.log(newGroups[minCountIndex]);
+      return minCountIndex;
     };
 
     // Helper function to calculate average rating of a group
@@ -324,6 +455,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     
     // Ensure balanced distribution by checking position counts in each group
     const distributeBalanced = () => {
+      console.log('Distributing players balanced...');
       // First, distribute players by position type to ensure each group has the right ratio
       // We'll track how many of each position we've added to each group
       let positionCounts = newGroups.map(() => ({
