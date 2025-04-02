@@ -16,6 +16,7 @@ type FormationDisplayProps = {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    maxRating: number;
     footFilters?: string[];
     tagFilters?: string[];
   };
@@ -97,7 +98,9 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
                           playerStatus.includes(filterStatus)
                         );
 
-    const matchesRating = (player.scoutRecommendation || 0) >= filters.minRating;
+    // Apply both minRating and maxRating filters
+    const playerRating = player.scoutRecommendation || 0;
+    const matchesRating = playerRating >= filters.minRating && playerRating <= filters.maxRating;
     
     return matchesSearch && matchesPosition && matchesFoot && matchesTags && matchesStatus && matchesRating;
   });
@@ -404,9 +407,7 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {Object.entries(statusCounts).map(([status, count]) => (
                 <div key={status} className="flex justify-between text-xs">
-                  <span className={status === 'HG' ? 'text-yellow-300' : status === 'Player To Watch' ? 'text-green-300' : 'text-gray-300'}>
-                    {status}:
-                  </span>
+                  <span className="text-gray-300">{status}:</span>
                   <span className="text-white font-medium">{count}</span>
                 </div>
               ))}

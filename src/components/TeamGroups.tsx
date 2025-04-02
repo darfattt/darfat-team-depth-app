@@ -258,7 +258,7 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     //sorted
     players = [...players].sort((a, b) => (a.scoutRecommendation ?? 0) - (b.scoutRecommendation ?? 0));
     //filter scouts
-    if(playersPerGroup < 11) {
+    if(playersPerGroup < 10) {
       const excludedNames = ['Hendra', 'Fadzri', 'Adhitia Putra Herawan'];
       players = players.filter(player => !excludedNames.includes(player.name));
     }
@@ -296,11 +296,12 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
     // Categorize players by position type and sort by rating within each category
     const getStatusPriority = (player: Player) => {
       const status = Array.isArray(player.status) ? player.status : [player.status];
-      
       // Check if status contains specific values
       if (status.some(s => s?.includes('Unknown'))) return 1;
-      if (status.some(s => s?.includes('Player To Watch'))) return 2;
-      return 3; // Other statuses
+      if (status.some(s => s?.includes('Give a chance'))) return 2;
+      if (status.some(s => s?.includes('HG'))) return 3;
+      if (status.some(s => s?.includes('Player To Watch'))) return 4;
+      return 5; // Other statuses
     };
 
     const defenders: GroupedPlayer[] = outfieldPlayers

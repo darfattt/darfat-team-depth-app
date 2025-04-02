@@ -31,6 +31,7 @@ interface PlayerListProps {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    maxRating: number;
     footFilters?: string[];
     tagFilters?: string[];
   }
@@ -41,6 +42,7 @@ interface PlayerListProps {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    maxRating: number;
     footFilters?: string[];
     tagFilters?: string[];
   }) => void
@@ -65,6 +67,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const [tagFilters, setTagFilters] = useState<string[]>(filters.tagFilters || [])
   const [statusFilter, setStatusFilter] = useState<string[]>(filters.statusArray || [])
   const [minRating, setMinRating] = useState<number>(filters.minRating || 0)
+  const [maxRating, setMaxRating] = useState<number>(filters.maxRating || 5)
   
   // State for edit dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -86,6 +89,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
     positionArray: filters.positionArray,
     statusArray: filters.statusArray,
     minRating: filters.minRating,
+    maxRating: filters.maxRating,
     footFilters: filters.footFilters || [],
     tagFilters: filters.tagFilters || []
   });
@@ -113,6 +117,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
       JSON.stringify(filters.positionArray) === JSON.stringify(prevFilters.current.positionArray) &&
       JSON.stringify(filters.statusArray) === JSON.stringify(prevFilters.current.statusArray) &&
       filters.minRating === prevFilters.current.minRating &&
+      filters.maxRating === prevFilters.current.maxRating &&
       JSON.stringify(filters.footFilters) === JSON.stringify(prevFilters.current.footFilters) &&
       JSON.stringify(filters.tagFilters) === JSON.stringify(prevFilters.current.tagFilters)
     ) {
@@ -141,6 +146,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
         setMinRating(filters.minRating || 0);
       }
       
+      if (filters.maxRating !== maxRating) {
+        setMaxRating(filters.maxRating || 5);
+      }
+      
       // Add handling for foot and tag filters
       if (JSON.stringify(filters.footFilters) !== JSON.stringify(footFilters)) {
         setFootFilters(filters.footFilters || []);
@@ -158,6 +167,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
         positionArray: filters.positionArray,
         statusArray: filters.statusArray,
         minRating: filters.minRating,
+        maxRating: filters.maxRating,
         footFilters: filters.footFilters || [],
         tagFilters: filters.tagFilters || []
       };
@@ -180,6 +190,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
       positionArray: positionFilters,
       statusArray: statusFilter,
       minRating: minRating,
+      maxRating: maxRating,
       footFilters: footFilters,
       tagFilters: tagFilters
     };
@@ -190,6 +201,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
       JSON.stringify(updatedFilters.positionArray) !== JSON.stringify(prevFilters.current.positionArray) ||
       JSON.stringify(updatedFilters.statusArray) !== JSON.stringify(prevFilters.current.statusArray) ||
       updatedFilters.minRating !== prevFilters.current.minRating ||
+      updatedFilters.maxRating !== prevFilters.current.maxRating ||
       JSON.stringify(updatedFilters.footFilters) !== JSON.stringify(prevFilters.current.footFilters) ||
       JSON.stringify(updatedFilters.tagFilters) !== JSON.stringify(prevFilters.current.tagFilters)
     ) {
@@ -201,6 +213,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
         positionArray: updatedFilters.positionArray,
         statusArray: updatedFilters.statusArray,
         minRating: updatedFilters.minRating,
+        maxRating: updatedFilters.maxRating,
         footFilters: updatedFilters.footFilters,
         tagFilters: updatedFilters.tagFilters
       };
@@ -208,7 +221,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
       // Then update parent
       onFilterChange(updatedFilters);
     }
-  }, [positionFilters, statusFilter, footFilters, tagFilters, debouncedSearchTerm, minRating, onFilterChange]);
+  }, [positionFilters, statusFilter, footFilters, tagFilters, debouncedSearchTerm, minRating, maxRating, onFilterChange]);
   
   // Helper function to ensure tags/status is always an array
   const ensureArrayField = (field: any): string[] => {
@@ -307,6 +320,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
     setStatusFilter([]);
     clearSearchTerm();
     handleMinRatingChange(0);
+    handleMaxRatingChange(5);
   };
 
   const sortedPlayers = [...players].sort((a, b) => {
@@ -359,7 +373,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
                         );
     
     // Rating filter
-    const matchesRating = (player.scoutRecommendation || 0) >= minRating;
+    const matchesRating = (player.scoutRecommendation || 0) >= minRating && (player.scoutRecommendation || 0) <= maxRating;
     
     return matchesSearch && matchesPosition && matchesFoot && matchesTag && matchesStatus && matchesRating;
   })
@@ -454,7 +468,18 @@ const PlayerList: React.FC<PlayerListProps> = ({
     // Skip setting state if we're processing a props update
     if (isProcessingPropsUpdate.current) return;
     
-    setMinRating(value);
+    // Ensure minRating doesn't exceed maxRating
+    const newValue = Math.min(value, maxRating);
+    setMinRating(newValue);
+  };
+
+  const handleMaxRatingChange = (value: number) => {
+    // Skip setting state if we're processing a props update
+    if (isProcessingPropsUpdate.current) return;
+    
+    // Ensure maxRating isn't less than minRating
+    const newValue = Math.max(value, minRating);
+    setMaxRating(newValue);
   };
 
   // Function to convert Player to EditablePlayer
@@ -765,36 +790,65 @@ const PlayerList: React.FC<PlayerListProps> = ({
           </div>
         </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-gray-700">Minimum Rating</span>
-            {minRating > 0 && (
-              <button 
-                onClick={() => handleMinRatingChange(0)}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
-                Clear
-              </button>
-            )}
+        <div className="flex gap-2">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium text-gray-700">Minimum Rating</span>
+              {minRating > 0 && (
+                <button 
+                  onClick={() => handleMinRatingChange(0)}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={minRating}
+                onChange={(e) => handleMinRatingChange(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <span className="text-sm text-gray-600 min-w-[3rem]">{minRating.toFixed(1)}</span>
+              <StarRating rating={minRating} size="sm" />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min="0"
-              max="5"
-              step="0.5"
-              value={minRating}
-              onChange={(e) => handleMinRatingChange(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="text-sm text-gray-600 min-w-[3rem]">{minRating.toFixed(1)}</span>
-            <StarRating rating={minRating} size="sm" />
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-medium text-gray-700">Maximum Rating</span>
+              {maxRating < 5 && (
+                <button 
+                  onClick={() => handleMaxRatingChange(5)}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={maxRating}
+                onChange={(e) => handleMaxRatingChange(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <span className="text-sm text-gray-600 min-w-[3rem]">{maxRating.toFixed(1)}</span>
+              <StarRating rating={maxRating} size="sm" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Active tag, foot, and status filters display */}
-      {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || minRating > 0) && (
+      {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || minRating > 0 || maxRating < 5) && (
         <div className="flex flex-wrap items-center gap-2">
           {searchTerm && (
             <span className="filter-badge filter-badge-search flex items-center">
@@ -831,17 +885,31 @@ const PlayerList: React.FC<PlayerListProps> = ({
               </button>
             </span>
           ))}
-
-          {minRating > 0 && (
+          
+          {minRating > 0 && maxRating < 5 ? (
+            <span className="filter-badge flex items-center bg-yellow-100 text-yellow-800">
+              Rating: {minRating.toFixed(1)}-{maxRating.toFixed(1)}
+              <button onClick={() => { handleMinRatingChange(0); handleMaxRatingChange(5); }} className="ml-1">
+                <XMarkIcon className="w-3 h-3" />
+              </button>
+            </span>
+          ) : minRating > 0 ? (
             <span className="filter-badge flex items-center bg-yellow-100 text-yellow-800">
               Min Rating: {minRating.toFixed(1)}
               <button onClick={() => handleMinRatingChange(0)} className="ml-1">
                 <XMarkIcon className="w-3 h-3" />
               </button>
             </span>
+          ) : maxRating < 5 && (
+            <span className="filter-badge flex items-center bg-yellow-100 text-yellow-800">
+              Max Rating: {maxRating.toFixed(1)}
+              <button onClick={() => handleMaxRatingChange(5)} className="ml-1">
+                <XMarkIcon className="w-3 h-3" />
+              </button>
+            </span>
           )}
           
-          {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || minRating > 0) && (
+          {(tagFilters.length > 0 || footFilters.length > 0 || statusFilter.length > 0 || minRating > 0 || maxRating < 5) && (
             <button 
               onClick={clearFilters}
               className="text-sm text-red-600 hover:text-red-800 ml-2"
@@ -1354,4 +1422,4 @@ const PlayerList: React.FC<PlayerListProps> = ({
   )
 }
 
-export default PlayerList 
+export default PlayerList
