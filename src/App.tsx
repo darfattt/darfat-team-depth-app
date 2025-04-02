@@ -16,7 +16,7 @@ type TeamColor = typeof teamColors[number];
 const IS_LOCAL_MODE = import.meta.env?.MODE === 'development';
 
 // App version
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 
 // Define Filters type here since it's used in App.tsx
 export interface Filters {
