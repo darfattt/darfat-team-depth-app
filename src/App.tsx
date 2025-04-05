@@ -16,7 +16,7 @@ type TeamColor = typeof teamColors[number];
 const IS_LOCAL_MODE = import.meta.env?.MODE === 'development';
 
 // App version
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 
 // Define Filters type here since it's used in App.tsx
 export interface Filters {
@@ -26,6 +26,7 @@ export interface Filters {
   positionArray: string[];
   statusArray: string[];
   minRating: number;
+  maxRating: number;
   footFilters?: string[];
   tagFilters?: string[];
 }
@@ -58,6 +59,7 @@ function App() {
     positionArray: [] as string[],
     statusArray: [] as string[],
     minRating: 0,
+    maxRating: 5,
     footFilters: [] as string[],
     tagFilters: [] as string[]
   });
@@ -168,6 +170,13 @@ function App() {
       );
     }
     
+    // Apply maximum rating filter
+    if (filters.maxRating < 5) {
+      result = result.filter(player => 
+        (player.scoutRecommendation || 0) <= filters.maxRating
+      );
+    }
+    
     // Apply foot filters
     if (filters.footFilters && filters.footFilters.length > 0) {
       result = result.filter(player => 
@@ -206,6 +215,7 @@ function App() {
     positionArray: string[];
     statusArray: string[];
     minRating: number;
+    maxRating: number;
     footFilters?: string[];
     tagFilters?: string[];
   }) => {
@@ -321,7 +331,7 @@ function App() {
                   <h2 className="text-xl font-bold text-gray-800">4-2-3-1 Formation</h2>
                   <div className="flex space-x-2">
                     {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search || 
-                      filters.minRating > 0 || (filters.footFilters && filters.footFilters.length > 0) || 
+                      filters.minRating > 0 || filters.maxRating < 5 || (filters.footFilters && filters.footFilters.length > 0) || 
                       (filters.tagFilters && filters.tagFilters.length > 0)) && (
                       <div className="flex items-center flex-wrap text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-md max-w-md">
                         <span className="mr-2 mb-1">Filtered:</span>
@@ -334,8 +344,12 @@ function App() {
                         {filters.search && (
                           <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">{filters.search}</span>
                         )}
-                        {filters.minRating > 0 && (
+                        {filters.minRating > 0 && filters.maxRating < 5 ? (
+                          <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: {filters.minRating.toFixed(1)}-{filters.maxRating.toFixed(1)}</span>
+                        ) : filters.minRating > 0 ? (
                           <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≥{filters.minRating.toFixed(1)}</span>
+                        ) : filters.maxRating < 5 && (
+                          <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≤{filters.maxRating.toFixed(1)}</span>
                         )}
                         {filters.footFilters && filters.footFilters.map(foot => (
                           <span key={foot} className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded mr-1 mb-1">Foot: {foot}</span>
@@ -399,7 +413,7 @@ function App() {
                 
                 {/* Display filter information if any filters are active */}
 {(filters.positionArray.length > 0 || filters.statusArray.length > 0 || filters.search || 
-  filters.minRating > 0 || (filters.footFilters && filters.footFilters.length > 0) || 
+  filters.minRating > 0 || filters.maxRating < 5 || (filters.footFilters && filters.footFilters.length > 0) || 
   (filters.tagFilters && filters.tagFilters.length > 0)) ? (
   <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
     <div className="flex items-center flex-wrap text-sm text-gray-600">
@@ -413,8 +427,12 @@ function App() {
       {filters.search && (
         <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-1 mb-1">Search: {filters.search}</span>
       )}
-      {filters.minRating > 0 && (
+      {filters.minRating > 0 && filters.maxRating < 5 ? (
+        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: {filters.minRating.toFixed(1)}-{filters.maxRating.toFixed(1)}</span>
+      ) : filters.minRating > 0 ? (
         <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≥{filters.minRating.toFixed(1)}</span>
+      ) : filters.maxRating < 5 && (
+        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mr-1 mb-1">Rating: ≤{filters.maxRating.toFixed(1)}</span>
       )}
       {filters.footFilters && filters.footFilters.map(foot => (
         <span key={foot} className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded mr-1 mb-1">Foot: {foot}</span>
