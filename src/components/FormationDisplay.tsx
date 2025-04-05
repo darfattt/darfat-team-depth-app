@@ -981,92 +981,95 @@ const FormationDisplay: React.FC<FormationDisplayProps> = ({
 
               {/* Player name & tag */}
               <div className={`${colorScheme.bgSecondary} p-2 rounded-md text-center min-w-[120px] shadow-lg mt-2`}>
-                {mainPlayer ? (
-                  <>
-                    <div 
-                      className={`text-xs font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)} cursor-pointer hover:underline`}
-                      onMouseEnter={(e) => handlePlayerHover(mainPlayer, e)}
-                      onMouseLeave={handlePlayerLeave}
-                    >
-                      {mainPlayer.name}
-                    </div>
-                    <div className={`text-[10px] ${getTagColor(mainPlayer)}`}>
-                      {mainPlayer.tags?.[0] || mainPlayer.experience + ' yrs'}
-                    </div>
-                    {showRatings && mainPlayer.scoutRecommendation !== undefined && (
-                      <div className="flex justify-center mt-1">
-                        <StarRating rating={mainPlayer.scoutRecommendation} size="sm" />
-                      </div>
-                    )}
-                    
-                    {/* Backup players */}
-                    {playersForPosition.length > 1 && (
-                      <div className="mt-1 pt-1 border-t border-gray-700">
-                        {/* Show up to 3 backup players */}
-                        {playersForPosition.slice(1, 4).map((backupPlayer: Player) => (
-                          <div key={backupPlayer.id} className="mt-1">
-                            <div 
-                              className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
-                              onMouseEnter={(e) => handlePlayerHover(backupPlayer, e)}
-                              onMouseLeave={handlePlayerLeave}
-                            >
-                              {backupPlayer.name}
-                            </div>
-                            {showRatings && backupPlayer.scoutRecommendation !== undefined && (
-                              <div className="flex justify-center mt-0.5">
-                                <StarRating rating={backupPlayer.scoutRecommendation} size="sm" />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        
-                        {/* Show message if there are more than 4 players total */}
-                        {playersForPosition.length > 4 && (
-                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
-                            +{playersForPosition.length - 4} more player{playersForPosition.length - 4 > 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className={`text-xs font-bold ${colorScheme.text}`}>
-                      No player
-                    </div>
-                    
-                    {/* Show backup players even when there's no main player */}
-                    {playersForPosition.length > 0 && (
-                      <div className="mt-1 pt-1 border-t border-gray-700">
-                        {/* Show up to 4 players when there's no main player */}
-                        {playersForPosition.slice(0, 4).map((backupPlayer: Player) => (
-                          <div key={backupPlayer.id} className="mt-1">
-                            <div 
-                              className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
-                              onMouseEnter={(e) => handlePlayerHover(backupPlayer, e)}
-                              onMouseLeave={handlePlayerLeave}
-                            >
-                              {backupPlayer.name}
-                            </div>
-                            {showRatings && backupPlayer.scoutRecommendation !== undefined && (
-                              <div className="flex justify-center mt-0.5">
-                                <StarRating rating={backupPlayer.scoutRecommendation} size="sm" />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        
-                        {/* Show message if there are more than 4 players */}
-                        {playersForPosition.length > 4 && (
-                          <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
-                            +{playersForPosition.length - 4} more player{playersForPosition.length - 4 > 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
+  {mainPlayer ? (
+    <>
+      <div 
+        className={`text-xs font-bold tracking-wide uppercase ${getPlayerNameColor(mainPlayer)} cursor-pointer hover:underline`}
+        onMouseEnter={(e) => handlePlayerHover(mainPlayer, e)}
+        onMouseLeave={handlePlayerLeave}
+      >
+        {mainPlayer.name}
+      </div>
+      <div className={`text-[10px] ${getTagColor(mainPlayer)}`}>
+        {mainPlayer.tags?.[0] || mainPlayer.experience + ' yrs'}
+      </div>
+      {showRatings && mainPlayer.scoutRecommendation !== undefined && (
+        <div className="flex justify-center mt-1">
+          <StarRating rating={mainPlayer.scoutRecommendation} size="sm" />
+        </div>
+      )}
+      
+      {/* Backup players - filter out mainPlayer */}
+      {playersForPosition.length > 0 && (
+        <div className="mt-1 pt-1 border-t border-gray-700">
+          {/* Filter out mainPlayer and show up to 3 backup players */}
+          {playersForPosition
+            .filter(player => player.id !== mainPlayer.id)
+            .slice(0, 3)
+            .map((backupPlayer: Player) => (
+              <div key={backupPlayer.id} className="mt-1">
+                <div 
+                  className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
+                  onMouseEnter={(e) => handlePlayerHover(backupPlayer, e)}
+                  onMouseLeave={handlePlayerLeave}
+                >
+                  {backupPlayer.name}
+                </div>
+                {showRatings && backupPlayer.scoutRecommendation !== undefined && (
+                  <div className="flex justify-center mt-0.5">
+                    <StarRating rating={backupPlayer.scoutRecommendation} size="sm" />
+                  </div>
                 )}
               </div>
+            ))}
+          
+          {/* Show message if there are more than 4 players total (including main player) */}
+          {playersForPosition.length > 4 && (
+            <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
+              +{playersForPosition.length - 4} more player{playersForPosition.length - 4 > 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  ) : (
+    <>
+      <div className={`text-xs font-bold ${colorScheme.text}`}>
+        No player
+      </div>
+      
+      {/* Show backup players when there's no main player */}
+      {playersForPosition.length > 0 && (
+        <div className="mt-1 pt-1 border-t border-gray-700">
+          {/* Show up to 4 players when there's no main player */}
+          {playersForPosition.slice(0, 4).map((backupPlayer: Player) => (
+            <div key={backupPlayer.id} className="mt-1">
+              <div 
+                className={`text-[10px] font-medium tracking-wide uppercase ${getPlayerNameColor(backupPlayer)} opacity-90 cursor-pointer hover:underline`}
+                onMouseEnter={(e) => handlePlayerHover(backupPlayer, e)}
+                onMouseLeave={handlePlayerLeave}
+              >
+                {backupPlayer.name}
+              </div>
+              {showRatings && backupPlayer.scoutRecommendation !== undefined && (
+                <div className="flex justify-center mt-0.5">
+                  <StarRating rating={backupPlayer.scoutRecommendation} size="sm" />
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {/* Show message if there are more than 4 players */}
+          {playersForPosition.length > 4 && (
+            <div className="mt-1 text-[9px] italic opacity-80 text-gray-300">
+              +{playersForPosition.length - 4} more player{playersForPosition.length - 4 > 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )}
+</div>
             </div>
           </div>
         );

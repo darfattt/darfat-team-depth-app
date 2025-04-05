@@ -23,23 +23,23 @@ type PositionPlayersMap = {
 // Position mapping to handle different position notations
 const positionMapping = {
   // Goalkeepers
-  'GK': ['GK', 'Goalkeeper', 'G', 'Keeper', 'Goalie'],
+  'GK': ['GK'],
   
   // Defenders
-  'LB': ['LB', 'LWB', 'Left Back', 'Left Fullback', 'Left Wing Back', 'LeftBack'],
-  'LCB': ['LCB','Sweeper'],
-  'RCB': ['RCB','CB', 'DF', 'Center Back', 'Central Defender', 'Defender', 'Centre Back', 'DC'],
-  'RB': ['RB', 'RWB', 'Right Back', 'Right Fullback', 'Right Wing Back', 'RightBack'],
+  'LB': ['LB'],
+  'LCB': ['LCB'],
+  'RCB': ['RCB'],
+  'RB': ['RB'],
   
   // Midfielders
-  'CDM': ['CDM', 'DM', 'DMF', 'Defensive Mid', 'Defensive Midfielder', 'Holding Midfielder'],
-  'CM': [ 'CM', 'M', 'MF', 'Center Mid'],
-  'LM': ['LM', 'LW', 'Left Mid', 'Left Wing', 'Left Winger', 'Left Midfielder'],
-  'CAM': ['CAM', 'AM', 'AMF', 'Attacking Mid', 'Attacking Midfielder', 'Playmaker', 'AP', 'Center Attacking Mid'],
-  'RM': ['RM', 'RW', 'Right Mid', 'Right Wing', 'Right Winger', 'Right Midfielder'],
+  'CDM': ['CDM'],
+  'CM': [ 'CM'],
+  'LM': ['LM'],
+  'CAM': ['CAM'],
+  'RM': ['RM'],
   
   // Forwards
-  'ST': ['ST', 'CF', 'Striker', 'Forward', 'Center Forward', 'F', 'FW', 'Attacker', 'ATT']
+  'ST': ['ST']
 };
 
 // Define positions in 4-2-3-1 formation with TOP TO BOTTOM orientation
@@ -80,7 +80,7 @@ const getPlayersForPosition = (players: Player[], position: string): Player[] =>
   //   validPositions = positionMapping[position as keyof typeof positionMapping] || [position];
   // }
   validPositions = positionMapping[position as keyof typeof positionMapping] || [position];
-
+  console.log({validPositions});
   
   return players
     .filter(p => {
@@ -113,13 +113,23 @@ const getPlayersForPosition = (players: Player[], position: string): Player[] =>
         return bRating - aRating;
       }
       // Then sort by experience
-      if (b.experience !== a.experience) {
-        return b.experience - a.experience;
+      const bStatus = getStatusPriority(b);
+      const aStatus = getStatusPriority(a);
+      if (bStatus !== aStatus) {
+        return bStatus - aStatus;
       }
       
       // Then by age (younger players get preference if same experience)
       return a.age - b.age;
     });
+};
+const getStatusPriority = (player: Player) => {
+  const status = Array.isArray(player.status) ? player.status : [player.status];
+  // Check if status contains specific values
+  if (status.some(s => s?.includes('Qualified'))) return 5;
+  if (status.some(s => s?.includes('Give a chance'))) return 3;
+  if (status.some(s => s?.includes('HG'))) return 2;
+  return 1; // Other statuses
 };
 
 // Find best player for a position based on exact match, experience and age
