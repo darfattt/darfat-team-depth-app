@@ -301,7 +301,9 @@ const TeamGroups: React.FC<TeamGroupsProps> = ({ players, playersPerGroup }) => 
       if (status.some(s => s?.includes('Give a chance'))) return 2;
       if (status.some(s => s?.includes('HG'))) return 3;
       if (status.some(s => s?.includes('Player To Watch'))) return 4;
-      return 5; // Other statuses
+      if (status.some(s => s?.includes('Not Confirmed'))) return 5;
+      if (status.some(s => s?.includes('Qualified'))) return 6;
+      return 7; // Other statuses
     };
 
     const defenders: GroupedPlayer[] = outfieldPlayers

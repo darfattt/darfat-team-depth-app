@@ -381,7 +381,7 @@ const PlayerList: React.FC<PlayerListProps> = ({
   const positions = Array.from(new Set(players.map(p => p.position))).filter(Boolean).sort()
   const footOptions = ['Kiri', 'Kanan', 'Keduanya']
   const allTags = Array.from(new Set(players.flatMap(p => ensureArrayField(p.tags)))).filter(Boolean).sort()
-  const statusOptions = ['HG', 'Player To Watch', 'Unknown', 'Give a chance','Existing Player','Not Interested']
+  const statusOptions = ['HG', 'Player To Watch', 'Unknown', 'Give a chance','Existing Player','Not Interested', 'Not Confirmed', 'Qualified']
 
   const renderSortIcon = (field: keyof Player) => {
     if (sortField !== field) return null
@@ -411,6 +411,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
         return 'bg-yellow-100 text-yellow-800';
       case 'Unknown':
         return 'bg-gray-100 text-gray-800';
+      case 'Not Confirmed':
+        return 'bg-orange-100 text-orange-800';
+      case 'Qualified':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-blue-100 text-blue-800';
     }
@@ -425,6 +429,10 @@ const PlayerList: React.FC<PlayerListProps> = ({
         return 'bg-yellow-500 text-white';
       case 'Unknown':
         return 'bg-gray-500 text-white';
+      case 'Not Confirmed':
+        return 'bg-orange-500 text-white';
+      case 'Qualified':
+        return 'bg-purple-500 text-white';
       default:
         return 'bg-blue-500 text-white';
     }
